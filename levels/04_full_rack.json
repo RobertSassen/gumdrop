@@ -1,0 +1,157 @@
+{
+ "title": "Winter festival window",
+ "customer": "The mayor's office",
+ "direction": "cw",
+ "cups": 4,
+ "cake_cols": 5,
+ "loop": [
+  [
+   40,
+   30
+  ],
+  [
+   1040,
+   30
+  ],
+  [
+   1040,
+   1050
+  ],
+  [
+   40,
+   1050
+  ]
+ ],
+ "trays": [
+  {
+   "pos": [
+    238,
+    140
+   ],
+   "facing": "left",
+   "cubes": [
+    "tangerine",
+    "grape",
+    "tangerine",
+    "grape"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    140
+   ],
+   "facing": "right",
+   "cubes": [
+    "grape",
+    "blueberry",
+    "cherry",
+    "lime"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    340
+   ],
+   "facing": "left",
+   "cubes": [
+    "grape",
+    "tangerine",
+    "blueberry",
+    "lime"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    340
+   ],
+   "facing": "right",
+   "cubes": [
+    "lemon",
+    "lemon",
+    "blueberry",
+    "blueberry"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    540
+   ],
+   "facing": "left",
+   "cubes": [
+    "lemon",
+    "blueberry",
+    "lemon",
+    "lemon"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    540
+   ],
+   "facing": "right",
+   "cubes": [
+    "cherry",
+    "cherry",
+    "grape",
+    "blueberry"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    740
+   ],
+   "facing": "left",
+   "cubes": [
+    "blueberry",
+    "cherry",
+    "cherry",
+    "lemon"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    740
+   ],
+   "facing": "right",
+   "cubes": [
+    "grape",
+    "cherry",
+    "lime",
+    "tangerine"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    940
+   ],
+   "facing": "left",
+   "cubes": [
+    "lime",
+    "blueberry",
+    "grape",
+    "grape"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    940
+   ],
+   "facing": "right",
+   "cubes": [
+    "lemon",
+    "cherry",
+    "cherry",
+    "lemon"
+   ]
+  }
+ ]
+}

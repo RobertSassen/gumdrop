@@ -1,0 +1,121 @@
+{
+ "title": "Raspberry bouquet",
+ "customer": "The twins next door",
+ "direction": "cw",
+ "cups": 4,
+ "cake_cols": 3,
+ "loop": [
+  [
+   240,
+   40
+  ],
+  [
+   840,
+   40
+  ],
+  [
+   1040,
+   240
+  ],
+  [
+   1040,
+   840
+  ],
+  [
+   840,
+   1040
+  ],
+  [
+   240,
+   1040
+  ],
+  [
+   40,
+   840
+  ],
+  [
+   40,
+   240
+  ]
+ ],
+ "trays": [
+  {
+   "pos": [
+    540,
+    230
+   ],
+   "facing": "up",
+   "cubes": [
+    "cherry",
+    "raspberry",
+    "raspberry",
+    "blueberry"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    440
+   ],
+   "facing": "left",
+   "cubes": [
+    "lemon",
+    "tangerine",
+    "tangerine",
+    "cherry"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    440
+   ],
+   "facing": "right",
+   "cubes": [
+    "blueberry",
+    "blueberry",
+    "lemon",
+    "tangerine"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    640
+   ],
+   "facing": "left",
+   "cubes": [
+    "blueberry",
+    "raspberry",
+    "raspberry",
+    "raspberry"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    640
+   ],
+   "facing": "right",
+   "cubes": [
+    "cherry",
+    "raspberry",
+    "lemon",
+    "cherry"
+   ]
+  },
+  {
+   "pos": [
+    540,
+    850
+   ],
+   "facing": "down",
+   "cubes": [
+    "lemon",
+    "tangerine",
+    "raspberry",
+    "raspberry"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,31 @@
+; Engine configuration file.
+; Open this folder in Godot 4.7.2 or newer.
+
+config_version=5
+
+[application]
+
+config/name="Gumdrop's Jelly Kitchen"
+config/description="Proof of concept for the setting-tray loop puzzle."
+run/main_scene="res://scenes/game.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+
+[display]
+
+window/size/viewport_width=1080
+window/size/viewport_height=1920
+window/size/window_width_override=540
+window/size/window_height_override=960
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/handheld/orientation=1
+
+[input_devices]
+
+pointing/emulate_mouse_from_touch=true
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+environment/defaults/default_clear_color=Color(0.964706, 0.921569, 0.866667, 1)

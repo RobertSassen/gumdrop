@@ -1,0 +1,334 @@
+[
+ {
+  "level": "01_first_order.json",
+  "start": "cddd/ddda/accc/adda|",
+  "taps": [
+   3,
+   3,
+   0,
+   2,
+   3,
+   3,
+   2,
+   3,
+   2,
+   1,
+   1,
+   2,
+   1,
+   0,
+   2,
+   1,
+   2,
+   2,
+   2,
+   0,
+   1,
+   0,
+   2,
+   0,
+   2,
+   1,
+   1,
+   2,
+   0,
+   1
+  ],
+  "keys": [
+   "cddd/ddda/accc/add|a1,",
+   "cddd/ddda/accc/aa|d1,d1,",
+   "cddd/ddda/accc/aa|d3,d3,",
+   "cddd/ddda/accc/aa|d3,d3,",
+   "cddd/ddda/accc/dd|a1,a1,",
+   "cddd/ddda/accc/aa|d1,d1,",
+   "cddd/ddda/accc/aa|d1,d1,",
+   "cddd/ddda/accc/dd|a1,a1,",
+   "cddd/ddda/accc/dd|a1,a1,",
+   "cddd/ddd/accc/dd|a1,a1,a0,",
+   "cddd/dd/accc/ddd|a1,a1,a0,",
+   "cddd/dd/accc/ddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,",
+   "cdd/dd/accc/dddd|a1,a1,a0,",
+   "cdd/dd/accc/dddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,",
+   "cdd/dd/accc/dddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,",
+   "cdd/dd/accc/dddd|a1,a1,a0,",
+   "cdd/dd/accc/dddd|a1,a1,a0,",
+   "cd/ddd/accc/dddd|a1,a1,a0,",
+   "cd/ddd/accc/dddd|a1,a1,a0,",
+   "cdd/dd/accc/dddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,",
+   "cdd/dd/accc/dddd|a1,a1,a0,",
+   "cddd/d/accc/dddd|a1,a1,a0,"
+  ]
+ },
+ {
+  "level": "01_first_order.json",
+  "start": "cddd/ddda/accc/adda|",
+  "taps": [
+   1,
+   0,
+   2,
+   0,
+   2,
+   2,
+   2,
+   3,
+   2,
+   2,
+   3
+  ],
+  "keys": [
+   "cddd/ddd/accc/adda|a0,",
+   "c/dddd/accc/adda|a0,d3,d3,",
+   "cc/dddd/acc/adda|a0,d3,d3,",
+   "c/dddd/accc/adda|a0,d3,d3,",
+   "cc/dddd/acc/adda|a0,d3,d3,",
+   "ccc/dddd/ac/adda|a0,d3,d3,",
+   "cccc/dddd/aa/adda|d3,d3,",
+   "cccc/dddd/aaa/addd|d3,",
+   "cccc/dddd/d/addd|a2,a2,a2,",
+   "cccc/dddd/aaa/addd|d2,",
+   "cccc/dddd/aaa/a|d2,d1,d1,d1,"
+  ]
+ },
+ {
+  "level": "01_first_order.json",
+  "start": "cddd/ddda/accc/adda|",
+  "taps": [
+   0,
+   0,
+   0,
+   2,
+   1,
+   3,
+   3,
+   2,
+   2,
+   2,
+   2,
+   2,
+   3,
+   3,
+   3
+  ],
+  "keys": [
+   "c/ddda/accc/adda|d3,d3,d3,",
+   "ddd/ddda/accc/adda|c3,",
+   "c/ddda/accc/adda|d3,d3,d3,",
+   "cc/ddda/acc/adda|d3,d3,d3,",
+   "cc/dddd/acc/adda|d3,d3,a0,",
+   "cc/dddd/acc/addd|d3,a0,a1,",
+   "cc/dddd/acc/addd|a0,a1,d1,",
+   "ccc/dddd/ac/addd|a0,a1,d1,",
+   "cccc/dddd/aaa/addd|d1,",
+   "cccc/dddd/d/addd|a2,a2,a2,",
+   "cccc/dddd/aaa/addd|d2,",
+   "cccc/dddd/d/addd|a2,a2,a2,",
+   "cccc/dddd/dd/add|a2,a2,a2,",
+   "cccc/dddd/ddd/ad|a2,a2,a2,",
+   "cccc/dddd/dddd/aaaa|"
+  ]
+ },
+ {
+  "level": "02_counterclockwise.json",
+  "start": "fffd/fdfa/adda/dcfa/cfcf/ddcd|",
+  "taps": [
+   3,
+   3,
+   0,
+   3,
+   5,
+   4,
+   4,
+   3,
+   4,
+   3,
+   5,
+   2
+  ],
+  "keys": [
+   "fffd/fdfa/adda/dcf/cfcf/ddcd|a4,",
+   "fffd/fdfa/adda/dc/cfcf/ddcd|a4,f4,",
+   "ffff/fdfa/adda/dc/cfcf/ddcd|a4,d0,",
+   "ffff/fdfa/adda/dd/cfcf/ddcd|a4,c4,",
+   "ffff/fdfa/adda/ddd/cfcf/ddcc|a4,",
+   "ffff/fdfa/adda/ddd/cfc/ddcc|a4,f2,",
+   "ffff/fdfa/adda/ddd/cff/ddcc|a4,c2,",
+   "ffff/fdfa/adda/ddd/cff/ddcc|a4,c2,",
+   "ffff/fdfa/adda/ddd/cff/ddcc|a4,c2,",
+   "ffff/fdfa/adda/ddd/cff/ddcc|a4,c2,",
+   "ffff/fdfa/adda/ddd/cff/ddcc|a4,c3,",
+   "ffff/fdfa/add/ddd/cff/ddcc|a4,c3,a1,"
+  ]
+ },
+ {
+  "level": "02_counterclockwise.json",
+  "start": "fffd/fdfa/adda/dcfa/cfcf/ddcd|",
+  "taps": [
+   1,
+   4,
+   0,
+   2,
+   0,
+   3
+  ],
+  "keys": [
+   "fffd/fdf/adda/dcfa/cfcf/ddcd|a5,",
+   "fffd/fdff/adda/dcfa/cfc/ddcd|a5,",
+   "fff/fdff/adda/dcfa/cfc/ddcd|a5,d0,",
+   "fff/fdff/addd/dcfa/cfc/ddcd|a5,a1,",
+   "fff/fdff/addd/dcfa/cfc/ddcd|a5,a1,",
+   "fff/fdff/addd/dcf/cfc/ddcd|a5,a1,a4,"
+  ]
+ },
+ {
+  "level": "02_counterclockwise.json",
+  "start": "fffd/fdfa/adda/dcfa/cfcf/ddcd|",
+  "taps": [
+   0,
+   0,
+   0,
+   2,
+   1,
+   5
+  ],
+  "keys": [
+   "fff/fdfa/adda/dcfa/cfcf/ddcd|d0,",
+   "fff/fdfa/adda/dcfa/cfcf/ddcd|d0,",
+   "fff/fdfa/adda/dcfa/cfcf/ddcd|d0,",
+   "fff/fdfa/addd/dcfa/cfcf/ddcd|a1,",
+   "fff/fdf/addd/dcfa/cfcf/ddcd|a1,a5,",
+   "fff/fdf/addd/dcfa/cfcf/ddc|a1,a5,d3,"
+  ]
+ },
+ {
+  "level": "03_octagon_loop.json",
+  "start": "geea/abbc/bcgg/eeeg/acea/eebc|",
+  "taps": [
+   3,
+   3,
+   0,
+   2,
+   4,
+   3,
+   3,
+   2
+  ],
+  "keys": [
+   "geea/abbc/bcgg/eee/acea/eebc|g4,",
+   "geea/abbc/bcgg/g/acea/eebc|e4,e4,e4,",
+   "geee/abbc/bcgg/g/acea/eebc|e4,e4,a0,",
+   "geee/abbc/bcg/gg/acea/eebc|e4,e4,a0,",
+   "geee/abbc/bcg/gg/acee/eebc|e4,a0,a2,",
+   "geee/abbc/bcgg/g/acee/eebc|e4,a0,a2,",
+   "geee/abbc/bcgg/aa/acee/eebc|e4,g4,",
+   "geee/abbc/bc/aa/acee/eebc|e4,g4,g1,g1,"
+  ]
+ },
+ {
+  "level": "03_octagon_loop.json",
+  "start": "geea/abbc/bcgg/eeeg/acea/eebc|",
+  "taps": [
+   1,
+   4,
+   0,
+   2,
+   0,
+   3
+  ],
+  "keys": [
+   "geea/abb/bcgg/eeeg/acea/eebc|c5,",
+   "geea/abb/bcgg/eeeg/ace/eebc|c5,a2,",
+   "gee/abb/bcgg/eeeg/ace/eebc|c5,a2,a0,",
+   "gee/abb/bcgg/eeeg/ace/eebc|c5,a2,a0,",
+   "ge/abb/bcgg/eeeg/acee/eebc|c5,a2,a0,",
+   "ge/abb/bcgg/eee/acee/eebc|c5,a2,a0,g4,"
+  ]
+ },
+ {
+  "level": "03_octagon_loop.json",
+  "start": "geea/abbc/bcgg/eeeg/acea/eebc|",
+  "taps": [
+   0,
+   0,
+   0,
+   2,
+   1
+  ],
+  "keys": [
+   "gee/abbc/bcgg/eeeg/acea/eebc|a0,",
+   "g/abbc/bcgg/eeeg/acea/eebc|a0,e0,e0,",
+   "a/abbc/bcgg/eeeg/acea/eebc|e0,e0,g0,",
+   "a/abbc/bcgg/eeeg/acea/eebc|e0,e0,g1,",
+   "a/abb/bcgg/eeeg/acea/eebc|e0,e0,g1,c5,"
+  ]
+ },
+ {
+  "level": "04_full_rack.json",
+  "start": "fbfb/dagf/dgbf/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caac|",
+  "taps": [
+   6,
+   6,
+   0
+  ],
+  "keys": [
+   "fbfb/dagf/dgbf/ggcc/ccgc/gfaa/caa/bdaf/ffgd/caac|g6,",
+   "fbfb/dagf/dgbf/ggcc/ccgc/gfaa/c/bdaf/ffgd/caac|g6,a6,a6,",
+   "fbf/dagf/dgbf/ggcc/ccgc/gfaa/c/bdaf/ffgd/caac|g6,a6,a6,b9,"
+  ]
+ },
+ {
+  "level": "04_full_rack.json",
+  "start": "fbfb/dagf/dgbf/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caac|",
+  "taps": [
+   2,
+   9,
+   1,
+   4
+  ],
+  "keys": [
+   "fbfb/dagf/dgb/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caac|f8,",
+   "fbfb/dagf/dgb/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caa|f8,c4,",
+   "fbfb/dag/dgb/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caa|f8,c4,f0,",
+   "fbfb/dag/dgb/ggcc/ccg/gfaa/caag/bdaf/ffgd/caa|f8,c4,f0,c7,"
+  ]
+ },
+ {
+  "level": "04_full_rack.json",
+  "start": "fbfb/dagf/dgbf/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caac|",
+  "taps": [
+   0,
+   1,
+   1,
+   5,
+   2,
+   4,
+   4,
+   9,
+   3,
+   0,
+   2,
+   8
+  ],
+  "keys": [
+   "fbf/dagf/dgbf/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caac|b9,",
+   "fbff/dag/dgbf/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caac|b9,",
+   "fbff/da/dgbf/ggcc/ccgc/gfaa/caag/bdaf/ffgd/caac|b9,g0,",
+   "fbff/daaa/dgbf/ggcc/ccgc/gf/caag/bdaf/ffgd/caac|b9,g0,",
+   "fbff/daaa/dgbb/ggcc/ccgc/gff/caag/bdaf/ffgd/caac|g0,",
+   "fbff/daaa/dgbb/ggcc/ccgg/gff/caag/bdaf/ffgd/caac|c7,",
+   "fbff/daaa/dgbb/ggcc/ccc/gff/caag/bdaf/ffgd/caac|g7,g7,",
+   "fbff/daaa/dgbb/ggcc/cccc/gff/caag/bdaf/ffgd/caa|g7,g7,",
+   "fbff/daaa/dgbb/gggg/cccc/gff/caag/bdaf/ffgd/caa|c1,c1,",
+   "fb/daaa/dgbb/gggg/cccc/gfff/caag/bdaf/ffgd/caa|c1,c1,f9,",
+   "fbb/daaa/dgb/gggg/cccc/gfff/caag/bdaf/ffgd/caa|c1,c1,f9,",
+   "fbb/daaa/dgb/gggg/cccc/gfff/caag/bdaf/ffg/caa|c1,c1,f9,d5,"
+  ]
+ }
+]
