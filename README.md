@@ -188,6 +188,6 @@ big. So there are two searches, each wrong only on the safe side:
   accepts them, whenever the player likes. When even that can't finish, the
   board is truly hopeless. It may notice some dead ends a few moves late.
 
-Speed: in Python, each level check takes 150 ms or less. GDScript runs these
-searches about 2 to 3 times slower than Python, and the dead-end readout took
-100 to 300 ms on 6 to 10-tray levels when it was last measured in Godot.
+Speed on this machine, in Godot: level checks take up to 0.3 s (about 400
+boards), and the dead-end readout takes under 30 ms at the start of every level.
+GDScript runs these searches about 2 to 3 times slower than Python.
