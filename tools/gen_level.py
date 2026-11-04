@@ -1,12 +1,12 @@
 """Searches random shuffles of a tray layout for solvable levels in a difficulty range.
 
 Example:
-    python3 tools/gen_level.py '{"tpl":"A","flavors":{"cherry":4,"lemon":4,"lime":8},"cups":4,"direction":"cw","want_min":4,"want_max":10,"easy":true}'
+    python3 tools/gen_level.py '{"tpl":"A","flavors":{"cherry":4,"lemon":4,"lime":4,"grape":4},"cups":3,"direction":"cw","prefer":"easy"}'
 
 Prints the best match as a level JSON (add a title and customer by hand).
 """
 import json, random, sys, time
-from sim import Board, solve, analyze
+from sim import Board, solve
 
 def rect(x0, y0, x1, y1):
     return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
@@ -40,33 +40,30 @@ def make(tpl, flavors, cups, direction, seed):
         trays.append(d)
     return {"loop": t["loop"], "direction": direction, "cups": cups, "trays": trays}
 
-def search(tpl, flavors, cups, direction, want_min, want_max, tries=400, limit=400000, easy=False):
+def search(tpl, flavors, cups, direction, tries=40, limit=300000, want_min_taps=0, prefer="hard", seed0=0):
+    """Keeps the solvable shuffle whose search was hardest (or easiest)."""
     best = None
-    for seed in range(tries):
+    for seed in range(seed0, seed0 + tries):
         lv = make(tpl, flavors, cups, direction, seed)
         b = Board(lv)
         if any(b.set):
             continue
-        ok, n = solve(b, limit)
-        if not ok:
+        ok, n, taps = solve(b, limit)
+        if not ok or taps < want_min_taps:
             continue
-        sh, states, dead, full = analyze(b, limit)
-        if sh is None:
-            continue
-        if want_min <= sh <= want_max:
-            score = dead / max(states, 1)
-            if easy: score = -score
-            if best is None or score > best[0]:
-                best = (score, seed, sh, states, dead, full, n, lv)
+        score = n if prefer == "hard" else -n
+        if best is None or score > best[0]:
+            best = (score, seed, n, taps, lv)
     return best
+
 
 if __name__ == "__main__":
     spec = json.loads(sys.argv[1])
     t0 = time.time()
     r = search(**spec)
     if r:
-        score, seed, sh, states, dead, full, n, lv = r
-        print(f"seed={seed} shortest={sh} states={states} stuck={dead} complete={full} dfs={n} ({time.time()-t0:.1f}s)")
+        score, seed, n, taps, lv = r
+        print(f"seed={seed} boards={n} taps={taps} ({time.time()-t0:.1f}s)")
         print(json.dumps(lv))
     else:
         print("none")

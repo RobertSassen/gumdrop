@@ -2,7 +2,7 @@
  "title": "A sunny lemon-lime",
  "customer": "Mrs. Pell, the florist",
  "direction": "cw",
- "cups": 4,
+ "cups": 3,
  "cake_cols": 2,
  "loop": [
   [
@@ -30,9 +30,9 @@
    ],
    "facing": "left",
    "cubes": [
+    "lemon",
     "lime",
-    "lime",
-    "lime",
+    "lemon",
     "lemon"
    ]
   },
@@ -43,9 +43,9 @@
    ],
    "facing": "right",
    "cubes": [
-    "cherry",
+    "blueberry",
     "lime",
-    "lime",
+    "blueberry",
     "lime"
    ]
   },
@@ -56,10 +56,10 @@
    ],
    "facing": "left",
    "cubes": [
-    "lemon",
-    "lemon",
-    "lemon",
-    "cherry"
+    "cherry",
+    "cherry",
+    "blueberry",
+    "blueberry"
    ]
   },
   {
@@ -69,9 +69,9 @@
    ],
    "facing": "right",
    "cubes": [
+    "lemon",
+    "lime",
     "cherry",
-    "lime",
-    "lime",
     "cherry"
    ]
   }

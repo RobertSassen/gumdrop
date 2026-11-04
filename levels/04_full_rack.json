@@ -30,9 +30,9 @@
    ],
    "facing": "left",
    "cubes": [
-    "tangerine",
+    "lemon",
     "grape",
-    "tangerine",
+    "lemon",
     "grape"
    ]
   },
@@ -43,10 +43,10 @@
    ],
    "facing": "right",
    "cubes": [
-    "grape",
     "blueberry",
-    "cherry",
-    "lime"
+    "licorice",
+    "tangerine",
+    "soda"
    ]
   },
   {
@@ -55,76 +55,76 @@
     340
    ],
    "facing": "left",
+   "cubes": [
+    "grape",
+    "lemon",
+    "cola",
+    "soda"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    340
+   ],
+   "facing": "right",
+   "cubes": [
+    "mint",
+    "lime",
+    "licorice",
+    "licorice"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    540
+   ],
+   "facing": "left",
+   "cubes": [
+    "mint",
+    "cola",
+    "lime",
+    "lime"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    540
+   ],
+   "facing": "right",
+   "cubes": [
+    "cherry",
+    "cherry",
+    "blueberry",
+    "cola"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    740
+   ],
+   "facing": "left",
+   "cubes": [
+    "licorice",
+    "tangerine",
+    "cherry",
+    "lime"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    740
+   ],
+   "facing": "right",
    "cubes": [
     "grape",
     "tangerine",
-    "blueberry",
-    "lime"
-   ]
-  },
-  {
-   "pos": [
-    842,
-    340
-   ],
-   "facing": "right",
-   "cubes": [
-    "lemon",
-    "lemon",
-    "blueberry",
-    "blueberry"
-   ]
-  },
-  {
-   "pos": [
-    238,
-    540
-   ],
-   "facing": "left",
-   "cubes": [
-    "lemon",
-    "blueberry",
-    "lemon",
+    "soda",
     "lemon"
-   ]
-  },
-  {
-   "pos": [
-    842,
-    540
-   ],
-   "facing": "right",
-   "cubes": [
-    "cherry",
-    "cherry",
-    "grape",
-    "blueberry"
-   ]
-  },
-  {
-   "pos": [
-    238,
-    740
-   ],
-   "facing": "left",
-   "cubes": [
-    "blueberry",
-    "cherry",
-    "cherry",
-    "lemon"
-   ]
-  },
-  {
-   "pos": [
-    842,
-    740
-   ],
-   "facing": "right",
-   "cubes": [
-    "grape",
-    "cherry",
-    "lime",
-    "tangerine"
    ]
   },
   {
@@ -134,10 +134,10 @@
    ],
    "facing": "left",
    "cubes": [
-    "lime",
+    "soda",
+    "cola",
     "blueberry",
-    "grape",
-    "grape"
+    "blueberry"
    ]
   },
   {
@@ -147,10 +147,10 @@
    ],
    "facing": "right",
    "cubes": [
-    "lemon",
+    "mint",
     "cherry",
-    "cherry",
-    "lemon"
+    "tangerine",
+    "mint"
    ]
   }
  ]

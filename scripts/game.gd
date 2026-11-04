@@ -36,15 +36,14 @@ var wobble_speed := 50.0
 var level_files: PackedStringArray = PackedStringArray()
 var level_index := 0
 var level  # Level
-var board  # BoardState: the true state, already resolved past any animation
-var history: Array = []  # BoardState snapshots for undo
+var board  # BoardState: the live board; the belt moves it every frame
+var history: Array = []  # BoardState snapshots for undo, taken before each tap
 
-## Animation of the last tap. Empty when idle. Keys: trace (each cube also
-## gets "dist", the belt distance it rides), shown (a board that gains cubes
-## as they land), t, speed (px/s), lap (px), applied.
-var anim: Dictionary = {}
-var tap_queue: Array = []
+## Fraction of a pixel the belt has moved but the rules haven't seen yet.
+var belt_carry := 0.0
+var belt_speed := 1400.0
 var wobble := {}  # tray -> time the wobble started
+var jiggle := {}  # tray -> time a cube last landed in it
 var time_sec := 0.0
 
 var dead_end := false
@@ -105,9 +104,9 @@ func _load_level(i: int) -> void:
 		return
 	board = level.make_board()
 	history.clear()
-	anim = {}
-	tap_queue.clear()
+	belt_carry = 0.0
 	wobble.clear()
+	jiggle.clear()
 	_update_buttons()
 	_evaluate()
 
@@ -120,7 +119,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_apply_tuning()
 		if level != null:
 			_load_level(level_index)
-		solver_text = Tuning.last_message
+		solver_text = Tuning.last_message()
 		return
 	if level == null:
 		return
@@ -137,52 +136,20 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_tray_tapped(t: int) -> void:
 	if dead_end or board.is_won():
 		return
-	if not anim.is_empty():
-		# Spec: taps made during animation are queued.
-		if Tuning.flag("loop", "queue_taps_during_animation"):
-			tap_queue.append(t)
-		return
-	_do_tap(t)
-
-
-func _do_tap(t: int) -> void:
 	if not board.can_tap(t):
 		wobble[t] = time_sec
 		return
-	var before = board.copy()
-	var trace: Dictionary = board.tap(t)
-	history.append(before)
-	_cancel_solvers()
-	status_text = ""
-	solver_text = ""
-	var shown = before.copy()
-	for i in trace["launched"]:
-		(shown.trays[t] as Array).pop_back()
-	shown.riding = []
-	for c in trace["cubes"]:
-		c["dist"] = level.ride_distance(c["start"], c["steps"])
-	# Every cube rides at most one lap, so the lap sets how long the move takes.
-	var lap: float = level.loop_length
-	var speed := clampf(Tuning.num("loop", "belt_speed_px_per_sec"),
-			lap / maxf(Tuning.num("loop", "max_lap_seconds"), 0.01),
-			lap / maxf(Tuning.num("loop", "min_lap_seconds"), 0.01))
-	anim = {
-		"trace": trace,
-		"shown": shown,
-		"t": 0.0,
-		"speed": speed,
-		"lap": lap,
-		"applied": {},
-	}
+	history.append(board.copy())
+	board.tap(t)
 	_update_buttons()
+	_evaluate()
 
 
 func _on_undo() -> void:
 	if history.is_empty():
 		return
-	anim = {}
-	tap_queue.clear()
 	board = history.pop_back()
+	belt_carry = 0.0
 	_evaluate()
 	_update_buttons()
 
@@ -203,34 +170,27 @@ func _on_next() -> void:
 
 func _process(delta: float) -> void:
 	time_sec += delta
-	if not anim.is_empty():
-		_advance_anim(delta)
+	if board != null and not dead_end and not board.riding.is_empty():
+		_run_belt(delta)
 	_poll_solvers()
 	queue_redraw()
 
 
-func _advance_anim(delta: float) -> void:
-	anim["t"] += delta
-	var trace: Dictionary = anim["trace"]
-	var travelled: float = anim["t"] * anim["speed"]
-	var shown = anim["shown"]
-	var cubes: Array = trace["cubes"]
-	for i in cubes.size():
-		var c: Dictionary = cubes[i]
-		if c["land"] != -1 and not anim["applied"].has(i) and travelled >= c["dist"]:
-			(shown.trays[c["land"]] as Array).append(c["flavor"])
-			shown._check_set(c["land"])
-			anim["applied"][i] = true
-	var settle: float = Tuning.num("loop", "settle_pause_seconds") * anim["speed"]
-	if travelled >= anim["lap"] + settle:
-		anim = {}
-		while not tap_queue.is_empty():
-			var queued: int = tap_queue.pop_front()
-			if board.can_tap(queued):
-				_do_tap(queued)
-				return
-			wobble[queued] = time_sec
-		_evaluate()
+## Moves the belt at a steady speed. The rules work in whole pixels, so the
+## leftover fraction is carried to the next frame.
+func _run_belt(delta: float) -> void:
+	belt_carry += belt_speed * delta
+	var px := floori(belt_carry)
+	belt_carry -= px
+	if px <= 0:
+		return
+	var landed: Array = board.advance(px)
+	if landed.is_empty():
+		return
+	for l in landed:
+		jiggle[l.y] = time_sec
+	# The board changed, so check again for a win or a dead end.
+	_evaluate()
 
 
 ## Decides what the board means now: won, stuck, or ask the solver.
@@ -244,18 +204,20 @@ func _evaluate() -> void:
 		return
 	if board.is_stuck():
 		dead_end = true
-		status_text = "Every cup is full and nothing can land."
+		status_text = "Every cup is full and no cube can land."
 		solver_text = ""
 		return
-	if not Tuning.flag("solver", "enabled"):
-		solver_text = "Solver off (tuning.json)"
+	if not Tuning.flag("solver", "show_readout"):
+		solver_text = ""
 		return
 	solver_text = "Checking the recipe..."
 	var solver = Solver.new()
 	solver.max_states = Tuning.integer("solver", "max_boards")
 	solver.max_msec = Tuning.integer("solver", "max_milliseconds")
+	# Between taps and landings the belt only rotates and comes back to the
+	# same board each lap, so this answer holds until the next change.
 	var job := {"solver": solver, "board": board.copy(), "result": {}, "stale": false}
-	job["task"] = WorkerThreadPool.add_task(func(): job["result"] = job["solver"].solve(job["board"]))
+	job["task"] = WorkerThreadPool.add_task(func(): job["result"] = job["solver"].check_dead_end(job["board"]))
 	solver_jobs.append(job)
 
 
@@ -276,9 +238,10 @@ func _poll_solvers() -> void:
 		var r: Dictionary = job["result"]
 		var ms: float = r["usec"] / 1000.0
 		solver_text = "Solver: %s in %.1f ms, %d boards checked" % [Solver.result_name(r["result"]), ms, r["states"]]
+		# A readout for testing only: the game itself stops only when every cup
+		# is full and nothing can land (see _evaluate).
 		if r["result"] == Solver.Result.UNSOLVABLE:
-			dead_end = true
-			status_text = "The loop stopped. This mix can't be finished from here."
+			solver_text = "Solver: this board can't be finished (%.1f ms, %d boards)" % [ms, r["states"]]
 		elif r["result"] == Solver.Result.UNKNOWN:
 			solver_text += " (gave up)"
 
@@ -339,6 +302,7 @@ func _apply_tuning() -> void:
 	wobble_time = maxf(Tuning.num("feedback", "wobble_seconds"), 0.01)
 	wobble_px = Tuning.num("feedback", "wobble_px")
 	wobble_speed = Tuning.num("feedback", "wobble_speed")
+	belt_speed = maxf(Tuning.num("loop", "belt_speed_px_per_sec"), 1.0)
 	_make_styles()
 
 
@@ -372,7 +336,7 @@ func _draw() -> void:
 	if level == null:
 		_text(status_text, Vector2(SCREEN.x / 2, 900), 36, col_ink)
 		return
-	var shown = board if anim.is_empty() else anim["shown"]
+	var shown = board
 	_draw_header()
 	_draw_cake(shown)
 
@@ -381,16 +345,13 @@ func _draw() -> void:
 	_draw_loop()
 	for t in level.tray_count():
 		_draw_tray(shown, t)
-	if anim.is_empty():
-		_draw_resting_cubes()
-	else:
-		_draw_moving_cubes()
+	_draw_riding_cubes()
 	draw_set_transform(Vector2.ZERO)
 
 	_draw_cup_row()
 	_text(status_text, Vector2(SCREEN.x / 2, 1752), 32, col_ink)
 	_text(solver_text, Vector2(SCREEN.x / 2, 1785), 22, col_ink_soft)
-	if anim.is_empty() and (dead_end or board.is_won()):
+	if dead_end or board.is_won():
 		_draw_banner()
 
 
@@ -474,7 +435,14 @@ func _draw_tray(shown, t: int) -> void:
 		var cav := Rect2(c - Vector2.ONE * (cube_size / 2.0 + 2), Vector2.ONE * (cube_size + 4))
 		draw_rect(cav, col_cavity.lerp(col_tray, 0.3) if is_set else col_cavity)
 		if i < tray.size():
-			_draw_cube(c, tray[i], 1.0)
+			var k := 1.0
+			if i == tray.size() - 1 and jiggle.has(t):
+				var age: float = time_sec - jiggle[t]
+				if age > 0.3:
+					jiggle.erase(t)
+				else:
+					k = 1.0 + 0.12 * sin(age * 30.0) * (1.0 - age / 0.3)
+			_draw_cube(c, tray[i], k)
 
 
 func _draw_cube(center: Vector2, flavor: int, size_factor: float) -> void:
@@ -489,44 +457,25 @@ func _draw_cup(center: Vector2) -> void:
 	draw_arc(center, 24.0, 0, TAU, 24, col_belt_edge, 2.0, true)
 
 
-## Cubes waiting on the loop between taps, stacked behind their stop.
-func _draw_resting_cubes() -> void:
-	var at_stop := {}
+## Cubes riding the belt. Cubes that left a tray together share a position
+## in the rules, so they're drawn one behind the other.
+func _draw_riding_cubes() -> void:
+	var at_pos := {}
+	var carry := 0.0 if dead_end else belt_carry
 	for r in board.riding:
-		var k: int = at_stop.get(r.y, 0)
-		at_stop[r.y] = k + 1
-		var p: Vector2 = level.ride_point_at(r.y, 0.0, k * cube_gap)
+		var k: int = at_pos.get(r.y, 0)
+		at_pos[r.y] = k + 1
+		var p: Vector2 = level.belt_point(r.y + carry - k * cube_gap)
 		_draw_cup(p)
 		_draw_cube(p, r.x, riding_scale)
-
-
-func _draw_moving_cubes() -> void:
-	var trace: Dictionary = anim["trace"]
-	var travelled: float = anim["t"] * anim["speed"]
-	var at_stop := {}
-	for c in trace["cubes"]:
-		var k: int = at_stop.get(c["start"], 0)
-		at_stop[c["start"]] = k + 1
-		var limit: float = c["dist"]
-		if c["land"] != -1 and travelled >= limit:
-			continue  # already in its tray
-		var p: Vector2 = level.ride_point_at(c["start"], minf(travelled, limit), k * cube_gap)
-		_draw_cup(p)
-		_draw_cube(p, c["flavor"], riding_scale)
 
 
 ## A row of cups under the board: filled cups are riding cubes, empty cups are
 ## the room the player has left.
 func _draw_cup_row() -> void:
 	var riding_flavors := []
-	if anim.is_empty():
-		for r in board.riding:
-			riding_flavors.append(r.x)
-	else:
-		var travelled: float = anim["t"] * anim["speed"]
-		for c in anim["trace"]["cubes"]:
-			if c["land"] == -1 or travelled < c["dist"]:
-				riding_flavors.append(c["flavor"])
+	for r in board.riding:
+		riding_flavors.append(r.x)
 	var n: int = level.cups
 	var spacing := 64.0
 	var x0 := SCREEN.x / 2.0 - (n - 1) * spacing / 2.0 + 60.0
@@ -546,4 +495,4 @@ func _draw_banner() -> void:
 		_text("Every tray has set. Tap Next for the next order.", r.get_center() + Vector2(0, 45), 28, col_ink_soft)
 	else:
 		_text("Gumdrop scratches its head...", r.get_center() + Vector2(0, -20), 46, col_ink)
-		_text("This mix can't be finished. Undo or restart.", r.get_center() + Vector2(0, 45), 28, col_ink_soft)
+		_text("Every cup is full and no cube can land. Undo or restart.", r.get_center() + Vector2(0, 45), 28, col_ink_soft)

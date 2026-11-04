@@ -1,21 +1,26 @@
 """Reference model of the jelly kitchen rules.
 
 A line-for-line Python copy of scripts/core/board_state.gd and the loop
-ordering in scripts/core/level.gd. Use it to check and design levels without
+geometry in scripts/core/level.gd. Use it to check and design levels without
 opening Godot:
 
-    python3 tools/sim.py levels/*.json          # solvable? shortest? dead ends?
+    python3 tools/sim.py levels/*.json          # solvable? how many taps?
     python3 tools/sim.py --fixtures levels/*.json > tests/fixtures/traces.json
 
 The fixtures are replayed by tests/run_tests.gd, so the two models can't drift
 apart without a failing test.
+
+The belt never stops. Positions are whole pixels along the belt, measured in
+the direction of travel. A riding cube is [flavor, position, next stop]. Time
+only matters through the order in which cubes reach trays, so the fixtures
+use "wait until the next cube reaches a tray" as a move next to the taps.
 """
-import json, random, sys, time
-from collections import deque
+import json, math, os, random, sys, time
 
-FLAVORS = ["cherry", "tangerine", "lemon", "lime", "raspberry", "grape", "blueberry"]
+FLAVORS = ["cherry", "tangerine", "lemon", "lime", "mint", "soda", "blueberry",
+           "grape", "raspberry", "cola", "licorice", "peach"]
+WAIT = -1
 
-import os
 
 def _tuning():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tuning.json")
@@ -24,19 +29,29 @@ def _tuning():
     except FileNotFoundError:
         return {}
 
+
 # Same source as the game: tuning.json at the project root.
 CAP = int(_tuning().get("rules", {}).get("tray_capacity", 4))
 DEFAULT_CUPS = int(_tuning().get("rules", {}).get("default_cups", 4))
 FACING = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
 CELL = 76.0
-TRAY_GAP = 6.0
+TRAY_PAD = 6.0
+
+
+def iround(x):
+    return int(math.floor(x + 0.5))
 
 
 def front_point(tray):
     x, y = tray["pos"]
     dx, dy = FACING[tray["facing"]]
-    half = (CAP * CELL + TRAY_GAP * 2) / 2
+    half = (CAP * CELL + TRAY_PAD * 2) / 2
     return (x + dx * half, y + dy * half)
+
+
+def loop_length(loop):
+    n = len(loop)
+    return sum(math.dist(loop[i], loop[(i + 1) % n]) for i in range(n))
 
 
 def project(loop, p):
@@ -51,50 +66,56 @@ def project(loop, p):
         t = 0.0 if l2 == 0 else max(0.0, min(1.0, ((p[0] - a[0]) * ex + (p[1] - a[1]) * ey) / l2))
         qx, qy = a[0] + ex * t, a[1] + ey * t
         d = (qx - p[0]) ** 2 + (qy - p[1]) ** 2
-        if best is None or d < best[0] - 1e-9:
+        if best is None or d < best[0] - 1e-6:
             best = (d, acc + seg * t)
         acc += seg
     return best[1]
 
 
-def stop_order(level):
-    dists = [project(level["loop"], front_point(t)) for t in level["trays"]]
-    idx = list(range(len(dists)))
-    idx.sort(key=lambda i: (dists[i], i))
-    if level["direction"] == "ccw":
-        idx.reverse()
-    return idx
+def geometry(level):
+    """Returns (belt length, tray order, stop positions) in travel coordinates."""
+    L = iround(loop_length(level["loop"]))
+    u = []
+    for t in level["trays"]:
+        d = iround(project(level["loop"], front_point(t))) % L
+        u.append(d if level["direction"] != "ccw" else (L - d) % L)
+    order = sorted(range(len(u)), key=lambda i: (u[i], i))
+    return L, order, [u[t] for t in order]
 
 
 class Board:
     def __init__(self, level):
         self.cups = level.get("cups", DEFAULT_CUPS)
-        self.order = stop_order(level)
+        self.L, self.order, self.stop_u = geometry(level)
         self.stop_of = [0] * len(self.order)
         for s, t in enumerate(self.order):
             self.stop_of[t] = s
         # tray cubes listed back..front (front is last)
         self.trays = [list(reversed(t["cubes"])) for t in level["trays"]]
         self.set = [False] * len(self.trays)
-        self.riding = [(r["color"], self.stop_of[r["tray"]]) for r in level.get("riding", [])]
+        self.riding = []
+        n = len(self.order)
+        for r in level.get("riding", []):
+            s = self.stop_of[r["tray"]]
+            self.riding.append([r["flavor"], self.stop_u[s], (s + 1) % n])
         for i in range(len(self.trays)):
             self._check_set(i)
 
     def copy(self):
         b = Board.__new__(Board)
-        b.cups, b.order, b.stop_of = self.cups, self.order, self.stop_of
+        b.cups, b.L, b.order, b.stop_u, b.stop_of = self.cups, self.L, self.order, self.stop_u, self.stop_of
         b.trays = [list(t) for t in self.trays]
         b.set = list(self.set)
-        b.riding = list(self.riding)
+        b.riding = [list(r) for r in self.riding]
         return b
 
     def key(self):
-        return (tuple(tuple(t) for t in self.trays), tuple(self.riding))
+        return (tuple(tuple(t) for t in self.trays), tuple(tuple(r) for r in self.riding))
 
     def key_str(self):
         """Same format as BoardState.key() in Godot."""
         trays = "/".join("".join(chr(97 + FLAVORS.index(c)) for c in t) for t in self.trays)
-        return trays + "|" + "".join(chr(97 + FLAVORS.index(c)) + str(p) + "," for c, p in self.riding)
+        return trays + "|" + "".join("%s%d:%d," % (chr(97 + FLAVORS.index(f)), u, s) for f, u, s in self.riding)
 
     def free(self):
         return self.cups - len(self.riding)
@@ -105,13 +126,16 @@ class Board:
 
     def _check_set(self, t):
         tr = self.trays[t]
-        if len(tr) == CAP and all(c == tr[0] for c in tr):
+        if not self.set[t] and len(tr) == CAP and all(c == tr[0] for c in tr):
             self.set[t] = True
+            return True
+        return False
 
     def can_tap(self, t):
         return (not self.set[t]) and len(self.trays[t]) > 0 and self.free() > 0
 
     def tap(self, t):
+        """Puts the front run on the belt at the tray's stop. Nothing lands yet."""
         tr = self.trays[t]
         c = tr[-1]
         run = 0
@@ -120,94 +144,117 @@ class Board:
                 break
             run += 1
         k = min(run, self.free())
+        s = self.stop_of[t]
         for _ in range(k):
             tr.pop()
-            self.riding.append((c, self.stop_of[t]))
+            self.riding.append([c, self.stop_u[s], (s + 1) % len(self.order)])
+        return k
+
+    def gap(self, r):
+        return (self.stop_u[r[2]] - r[1]) % self.L
+
+    def advance(self, px):
+        """Moves the belt px pixels. Returns [(flavor, tray)] for each landing, in order."""
+        landed = []
         n = len(self.order)
-        cubes = [[c2, p, True] for (c2, p) in self.riding]
-        for _ in range(n):
-            for cube in cubes:
-                if not cube[2]:
-                    continue
-                cube[1] = (cube[1] + 1) % n
-                tt = self.order[cube[1]]
-                if self.accepts(tt, cube[0]):
-                    self.trays[tt].append(cube[0])
-                    self._check_set(tt)
-                    cube[2] = False
-        self.riding = [(c2, p) for (c2, p, alive) in cubes if alive]
+        guard = 0
+        while self.riding and guard < 100000:
+            guard += 1
+            g = min(self.gap(r) for r in self.riding)
+            if g > px:
+                for r in self.riding:
+                    r[1] = (r[1] + px) % self.L
+                break
+            for r in self.riding:
+                r[1] = (r[1] + g) % self.L
+            px -= g
+            keep = []
+            for r in self.riding:
+                if r[1] == self.stop_u[r[2]]:
+                    t = self.order[r[2]]
+                    r[2] = (r[2] + 1) % n
+                    if self.accepts(t, r[0]):
+                        self.trays[t].append(r[0])
+                        self._check_set(t)
+                        landed.append((r[0], t))
+                        continue
+                keep.append(r)
+            self.riding = keep
+        return landed
+
+    def wait(self):
+        """Moves the belt until the next cube reaches a tray."""
+        if self.riding:
+            self.advance(min(self.gap(r) for r in self.riding))
 
     def won(self):
         return all(self.set)
 
+    def stuck(self):
+        """No free cups and a full lap of the belt lands nothing."""
+        if self.won() or self.free() > 0:
+            return False
+        return not self.copy().advance(self.L)
+
     def moves(self):
-        return [t for t in range(len(self.trays)) if self.can_tap(t)]
+        ms = [WAIT] if self.riding else []
+        if self.free() > 0:
+            ms += [t for t in range(len(self.trays)) if self.can_tap(t)]
+        return ms
+
+    def play(self, m):
+        if m == WAIT:
+            self.wait()
+        else:
+            self.tap(m)
 
 
 def solve(board, limit=2_000_000):
-    """DFS: returns (solvable or None if limit hit, states visited)."""
+    """Patient-player search: after every tap, let the belt run one full lap.
+
+    Any solution found this way can really be played (just wait for the belt
+    to come round between taps), so True means the level is solvable. It may
+    miss solutions that need quick taps, so False only means "not solvable
+    for a patient player". Returns (True/False/None if the limit was hit,
+    boards visited, taps in the found solution).
+    """
     seen = set()
-    stack = [board]
+    stack = [(board, 0)]
     while stack:
-        b = stack.pop()
+        b, taps = stack.pop()
         if b.won():
-            return True, len(seen)
+            return True, len(seen), taps
         k = b.key()
         if k in seen:
             continue
         seen.add(k)
         if len(seen) > limit:
-            return None, len(seen)
-        for m in reversed(b.moves()):
-            nb = b.copy(); nb.tap(m)
+            return None, len(seen), 0
+        moves = [t for t in range(len(b.trays)) if b.can_tap(t)]
+        for m in reversed(moves):
+            nb = b.copy(); nb.tap(m); nb.advance(nb.L)
             if nb.key() not in seen:
-                stack.append(nb)
-    return False, len(seen)
+                stack.append((nb, taps + 1))
+    return False, len(seen), 0
 
 
-def analyze(board, limit=3_000_000):
-    """BFS over the full reachable space: shortest solution, states, dead-end states."""
-    seen = {board.key(): 0}
-    q = deque([(board, 0)])
-    shortest = None
-    dead = 0
-    while q:
-        b, d = q.popleft()
-        if b.won():
-            if shortest is None:
-                shortest = d
-            continue
-        ms = b.moves()
-        if not ms:
-            dead += 1
-        for m in ms:
-            nb = b.copy(); nb.tap(m)
-            k = nb.key()
-            if k not in seen:
-                seen[k] = d + 1
-                q.append((nb, d + 1))
-                if len(seen) > limit:
-                    return shortest, len(seen), dead, False
-    return shortest, len(seen), dead, True
-
-
-def fixtures(paths, walks=3, length=30):
-    """Random legal tap sequences per level, with the board key after each tap."""
+def fixtures(paths, walks=3, length=60):
+    """Random legal move sequences per level, with the board key after each move."""
     out = []
     for path in paths:
         lv = json.load(open(path))
         for w in range(walks):
             rnd = random.Random(w)
             b = Board(lv)
-            taps, keys = [], []
+            moves, keys = [], []
             for _ in range(length):
                 ms = b.moves()
                 if not ms:
                     break
                 m = rnd.choice(ms)
-                b.tap(m)
-                taps.append(m); keys.append(b.key_str())
-            out.append({"level": path.split("/")[-1], "start": Board(lv).key_str(), "taps": taps, "keys": keys})
+                b.play(m)
+                moves.append(m); keys.append(b.key_str())
+            out.append({"level": os.path.basename(path), "start": Board(lv).key_str(), "moves": moves, "keys": keys})
     return out
 
 
@@ -218,6 +265,5 @@ if __name__ == "__main__":
     for path in sys.argv[1:]:
         lv = json.load(open(path))
         b = Board(lv)
-        t0 = time.time(); ok, n = solve(b); t1 = time.time()
-        sh, states, dead, full = analyze(b, 200_000)
-        print(f"{path}: order={b.order} solvable={ok} dfs_states={n} ({(t1-t0)*1000:.1f} ms) shortest={sh} reachable={states} stuck_states={dead} complete={full}")
+        t0 = time.time(); ok, n, taps = solve(b, 3_000_000); t1 = time.time()
+        print(f"{path}: order={b.order} solvable={ok} boards={n} ({(t1-t0)*1000:.0f} ms) taps_in_found_solution={taps}")

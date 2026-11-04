@@ -8,12 +8,8 @@
  },
 
  "loop": {
-  "_notes": "How cubes move. Speed is along the belt in screen pixels (the screen is 1080 wide). Lap time is clamped so small and large loops both feel right.",
-  "belt_speed_px_per_sec": 1400,
-  "min_lap_seconds": 0.8,
-  "max_lap_seconds": 2.4,
-  "settle_pause_seconds": 0.08,
-  "queue_taps_during_animation": true,
+  "_notes": "The belt never stops while cubes ride it. Speed is along the belt in screen pixels per second (the screen is 1080 wide; the loops are 2500 to 3900 px around). The gap spaces out cubes that left a tray together.",
+  "belt_speed_px_per_sec": 900,
   "riding_cube_gap_px": 50
  },
 
@@ -25,8 +21,8 @@
  },
 
  "solver": {
-  "_notes": "Dead-end check after each move. When a budget runs out the game says the solver gave up instead of calling a dead end.",
-  "enabled": true,
+  "_notes": "A testing readout under the board that says whether the board can still be finished. It never stops the game: the game stops only when every cup is full and no cube can land. Turn it off to play blind.",
+  "show_readout": true,
   "max_boards": 300000,
   "max_milliseconds": 3000
  },
@@ -42,9 +38,14 @@
    "tangerine": "#f28c38",
    "lemon": "#f2c53d",
    "lime": "#86c046",
-   "raspberry": "#e8619f",
+   "mint": "#2fb59a",
+   "soda": "#5cc6ee",
+   "blueberry": "#3f6fd9",
    "grape": "#8e5bc2",
-   "blueberry": "#3f7fd9"
+   "raspberry": "#e8619f",
+   "cola": "#8a5a3c",
+   "licorice": "#3a3348",
+   "peach": "#f7a98b"
   },
   "colors": {
    "background": "#f6ebdd",

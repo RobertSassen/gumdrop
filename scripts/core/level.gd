@@ -10,7 +10,9 @@ extends RefCounted
 const BoardState = preload("res://scripts/core/board_state.gd")
 const Tuning = preload("res://scripts/core/tuning.gd")
 
-const FLAVORS := ["cherry", "tangerine", "lemon", "lime", "raspberry", "grape", "blueberry"]
+## Every flavor a level can use. Colors live in tuning.json (look.flavors).
+const FLAVORS := ["cherry", "tangerine", "lemon", "lime", "mint", "soda", "blueberry",
+		"grape", "raspberry", "cola", "licorice", "peach"]
 const FACINGS := {
 	"left": Vector2(-1, 0),
 	"right": Vector2(1, 0),
@@ -33,11 +35,16 @@ var start_riding: Array = []  # Vector2i(flavor, tray)
 var cake_cols: int = 0
 
 var loop_length: float = 0.0
-var _seg_start: PackedFloat32Array = PackedFloat32Array()
+var _seg_start: PackedFloat64Array = PackedFloat64Array()
 ## Distance along the loop of each tray's open end, by tray index.
-var tray_dist: PackedFloat32Array = PackedFloat32Array()
+var tray_dist: PackedFloat64Array = PackedFloat64Array()
+## The belt in whole pixels, as the rules see it.
+var belt_length: int = 1
 ## Tray indices in travel order.
 var travel_order: PackedInt32Array = PackedInt32Array()
+## Belt position of each stop, in travel order. Positions count from the
+## loop's first point in the direction cubes travel.
+var stop_pos: PackedInt32Array = PackedInt32Array()
 
 
 static func flavor_id(name: String) -> int:
@@ -90,7 +97,7 @@ func from_dict(d: Dictionary) -> void:
 
 func make_board():
 	var b = BoardState.new()
-	b.setup(tray_cubes, travel_order, cups, start_riding)
+	b.setup(tray_cubes, travel_order, stop_pos, belt_length, cups, start_riding)
 	return b
 
 
@@ -128,24 +135,27 @@ func cavity_center(t: int, slot_from_back: int) -> Vector2:
 # --- Loop geometry ---------------------------------------------------------
 
 func _build_geometry() -> void:
-	_seg_start = PackedFloat32Array()
+	_seg_start = PackedFloat64Array()
 	loop_length = 0.0
 	for i in loop.size():
 		_seg_start.append(loop_length)
 		loop_length += loop[i].distance_to(loop[(i + 1) % loop.size()])
-	tray_dist = PackedFloat32Array()
+	belt_length = maxi(floori(loop_length + 0.5), 1)
+	tray_dist = PackedFloat64Array()
+	var u := PackedInt32Array()
 	for t in tray_count():
-		tray_dist.append(project(tray_front_point(t)))
+		var d := project(tray_front_point(t))
+		tray_dist.append(d)
+		var p := floori(d + 0.5) % belt_length
+		u.append(posmod(belt_length - p, belt_length) if direction == "ccw" else p)
 	var idx := []
 	for t in tray_count():
 		idx.append(t)
-	idx.sort_custom(func(a, b):
-		if is_equal_approx(tray_dist[a], tray_dist[b]):
-			return a < b
-		return tray_dist[a] < tray_dist[b])
-	if direction == "ccw":
-		idx.reverse()
+	idx.sort_custom(func(a, b): return u[a] < u[b] or (u[a] == u[b] and a < b))
 	travel_order = PackedInt32Array(idx)
+	stop_pos = PackedInt32Array()
+	for t in travel_order:
+		stop_pos.append(u[t])
 
 
 ## Distance along the loop of the point on it closest to p.
@@ -181,13 +191,9 @@ func travel_sign() -> float:
 	return -1.0 if direction == "ccw" else 1.0
 
 
-## Distance travelled from one stop to the next one in travel order.
-func hop_length(from_stop: int) -> float:
-	var n := travel_order.size()
-	var a := tray_dist[travel_order[from_stop]]
-	var b := tray_dist[travel_order[(from_stop + 1) % n]]
-	var hop := fposmod((b - a) * travel_sign(), loop_length)
-	return loop_length if hop == 0.0 else hop
+## Screen point (board coordinates) of a belt position as the rules count it.
+func belt_point(pos: float) -> Vector2:
+	return point_at(-pos if direction == "ccw" else pos)
 
 
 ## Unit vector pointing the way cubes travel at distance d along the loop.
@@ -195,20 +201,5 @@ func travel_tangent(dist: float) -> Vector2:
 	return (point_at(dist + 2.0) - point_at(dist - 2.0)).normalized() * travel_sign()
 
 
-## Distance along the belt from a stop to the stop `steps` further on.
-func ride_distance(start_stop: int, steps: int) -> float:
-	var n := travel_order.size()
-	var d := 0.0
-	for i in steps:
-		d += hop_length((start_stop + i) % n)
-	return d
-
-
-## Where a cube is after travelling `travelled` pixels from its start stop,
-## held `back` pixels behind so cubes that share a stop don't overlap.
-func ride_point_at(start_stop: int, travelled: float, back: float = 0.0) -> Vector2:
-	return point_at(tray_dist[travel_order[start_stop]] + (travelled - back) * travel_sign())
-
-
 func stop_point(stop: int) -> Vector2:
-	return point_at(tray_dist[travel_order[stop]])
+	return belt_point(stop_pos[stop])

@@ -46,9 +46,9 @@
    ],
    "facing": "up",
    "cubes": [
-    "cherry",
+    "lemon",
     "raspberry",
-    "raspberry",
+    "blueberry",
     "blueberry"
    ]
   },
@@ -59,10 +59,10 @@
    ],
    "facing": "left",
    "cubes": [
-    "lemon",
-    "tangerine",
-    "tangerine",
-    "cherry"
+    "grape",
+    "peach",
+    "raspberry",
+    "blueberry"
    ]
   },
   {
@@ -73,9 +73,9 @@
    "facing": "right",
    "cubes": [
     "blueberry",
-    "blueberry",
     "lemon",
-    "tangerine"
+    "mint",
+    "grape"
    ]
   },
   {
@@ -85,10 +85,10 @@
    ],
    "facing": "left",
    "cubes": [
-    "blueberry",
+    "peach",
     "raspberry",
-    "raspberry",
-    "raspberry"
+    "lemon",
+    "mint"
    ]
   },
   {
@@ -98,10 +98,10 @@
    ],
    "facing": "right",
    "cubes": [
-    "cherry",
-    "raspberry",
-    "lemon",
-    "cherry"
+    "grape",
+    "peach",
+    "mint",
+    "grape"
    ]
   },
   {
@@ -112,8 +112,8 @@
    "facing": "down",
    "cubes": [
     "lemon",
-    "tangerine",
-    "raspberry",
+    "mint",
+    "peach",
     "raspberry"
    ]
   }

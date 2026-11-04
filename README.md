@@ -24,15 +24,21 @@ toolbar for Undo, Restart and switching levels.
 | Tap a tray, whole front run leaves, cubes ride and drop into the first tray that takes them | Press-and-hold landing preview |
 | Clockwise and counterclockwise loops, a different loop shape per level | Boosts (ramekin, extra cup) |
 | Trays set, panes fill in the window cake, win screen | Gumdrop, the shop, sound, real art |
-| Unlimited undo and restart; taps during animation are queued | Real pictures in the cake (each pane takes its tray's flavor for now) |
-| Dead ends: "stuck" right away, "unsolvable" from the solver, with timing shown | Level select, progress saving |
+| Unlimited undo and restart | Real pictures in the cake (each pane takes its tray's flavor for now) |
+| 12 flavors, one per tray in every level | Level select, progress saving |
+| Game stops only when every cup is full and no cube can land | |
 
-### One rule the spec left open
+### How the belt works
 
-A cube that rides a full lap without landing **waits in its cup where it
-started**. On every later tap the whole loop runs one more lap, so waiting cubes
-get another chance to land. This keeps "the loop only moves when you tap" from
-the no-time-pressure pillar.
+The belt never stops while cubes ride it, at one steady speed. A cube that
+finds no home keeps going round until a tray takes it. Because the belt keeps
+moving, *when* you tap can matter: it decides which tray a riding cube reaches
+first.
+
+The game stops only when every cup is full and a full lap would land nothing.
+A solver readout under the board says whether the board can still be finished.
+It's there for testing and never stops the game; turn it off with
+`solver.show_readout` in `tuning.json`.
 
 ## Tuning
 
@@ -44,9 +50,9 @@ level). Any key you leave out falls back to its default in
 | Section | Values | What they change |
 | --- | --- | --- |
 | `rules` | `tray_capacity`, `default_cups` | Cavities per tray, and cups for levels that don't set their own. These change every puzzle, so re-check levels with `tools/sim.py` after editing. |
-| `loop` | `belt_speed_px_per_sec`, `min_lap_seconds`, `max_lap_seconds`, `settle_pause_seconds`, `queue_taps_during_animation`, `riding_cube_gap_px` | How fast cubes ride. The speed is constant along the belt, and lap time is clamped so tiny and huge loops both feel right. |
+| `loop` | `belt_speed_px_per_sec`, `riding_cube_gap_px` | How fast the belt runs, and how far apart cubes that left a tray together are drawn. |
 | `feedback` | `wobble_seconds`, `wobble_px`, `wobble_speed` | The tray wobble when a tap can't send anything. |
-| `solver` | `enabled`, `max_boards`, `max_milliseconds` | The dead-end check and its budget. |
+| `solver` | `show_readout`, `max_boards`, `max_milliseconds` | The testing readout under the board and its budget. |
 | `look` | `cube_size_px`, `riding_cube_scale`, `belt_width_px`, `arrow_spacing_px`, `flavors`, `colors` | Sizes and the whole palette, so color tests need no code. |
 
 Per-level values (loop shape, direction, cups, trays) stay in the level files.
@@ -58,17 +64,18 @@ Screen layout positions stay in code, since they move with the art.
 project.godot            Portrait 1080 × 1920, mobile renderer
 tuning.json              Global game values (speeds, solver budget, palette)
 scenes/game.tscn         The one screen
-scripts/game.gd          Drawing, input, animation, toolbar
+scripts/game.gd          Drawing, input, the moving belt, toolbar
 scripts/core/
-  board_state.gd         The rules: trays, cups, tap and delivery
+  board_state.gd         The rules: trays, cups, taps and the moving belt
   level.gd               Level loading and loop geometry (tray order, direction)
-  solver.gd              Dead-end check: depth-first search over all boards
+  solver.gd              Level check (patient player) and dead-end readout
   tuning.gd              Loads tuning.json, with defaults for missing keys
 levels/*.json            Levels, loaded in file-name order
 tests/run_tests.gd       Headless tests
 tests/fixtures/          Move traces recorded by the Python model
 tools/sim.py             Python copy of the rules, for checking levels
 tools/gen_level.py       Searches shuffles for solvable levels
+tools/screenshot.gd      Saves a screenshot, optionally after some taps
 ```
 
 ## Level files
@@ -82,7 +89,7 @@ tools/gen_level.py       Searches shuffles for solvable levels
  "cake_cols": 3,
  "loop": [[40, 160], [1040, 160], [1040, 1000], [40, 1000]],
  "trays": [
-  {"pos": [238, 300], "facing": "left", "cubes": ["lime", "grape", "grape", "grape"]}
+  {"pos": [238, 300], "facing": "left", "cubes": ["lime", "grape", "soda", "grape"]}
  ]
 }
 ```
@@ -92,7 +99,8 @@ tools/gen_level.py       Searches shuffles for solvable levels
 - `facing` is the side of the tray with the open end, toward the loop.
 - `cubes` are listed **front first**, from the loop inward. Trays can hold fewer
   than four.
-- Flavors: cherry, tangerine, lemon, lime, raspberry, grape, blueberry.
+- Flavors: cherry, tangerine, lemon, lime, mint, soda, blueberry, grape,
+  raspberry, cola, licorice, peach. Colors are in `tuning.json`.
 - Optional `"riding": [{"flavor": "lime", "tray": 2}]` starts cubes in cups at a
   tray's stop.
 
@@ -105,28 +113,38 @@ end onto the loop, so moving a tray along the loop changes the puzzle.
 godot --headless --path . -s res://tests/run_tests.gd
 ```
 
-The tests cover the delivery rules, setting, dead ends, clockwise and
-counterclockwise ordering, and check that every level is solvable. They also
+The tests cover the belt and delivery rules, setting, getting stuck, clockwise
+and counterclockwise ordering, and check that every level is solvable and uses
+one flavor per tray. They also
 replay random games recorded by `tools/sim.py` and fail if Godot and the Python
 model ever disagree. After changing a rule in one, change the other and refresh
 the fixtures:
 
 ```
-python3 tools/sim.py levels/*.json                         # solvable? shortest? dead ends?
+python3 tools/sim.py levels/*.json                         # solvable?
 python3 tools/sim.py --fixtures levels/*.json > tests/fixtures/traces.json
 ```
 
+Screenshots without a phone (needs a display, or `xvfb-run` on Linux):
+
+```
+godot --path . --rendering-driver opengl3 --resolution 540x960 -s res://tools/screenshot.gd -- out.png 3 0 1 2
+```
+
+This opens level 4 (index 3), taps trays 0, 1 and 2, and saves `out.png`.
+
 ## Solver findings so far
 
-The spec named the solver as the main technical risk. From the Python model:
+With a belt that never stops, an exact search over every tap timing is far too
+big. So there are two searches, each wrong only on the safe side:
 
-- Boards with 4 to 6 trays are trivial: a full search takes a few milliseconds.
-- With 10 trays, 4 cups is easy for the solver (hundreds of boards), but 3 cups
-  is a cliff. Most random 10-tray, 3-cup mixes are unsolvable, and proving that
-  takes 20,000 to 250,000+ boards, which is seconds in Python. The game runs the
-  solver on a worker thread with a 300,000-board and 3-second budget and says
-  "gave up" when it runs out, rather than calling a dead end it can't prove.
+- **Level check (patient player):** after every tap, let the belt run a full
+  lap. Any solution it finds can really be played, so a level it passes is
+  solvable. All four levels pass in about a second or less.
+- **Dead-end readout (relaxed player):** riding cubes may land in any tray that
+  accepts them, whenever the player likes. When even that can't finish, the
+  board is truly hopeless. It may notice some dead ends a few moves late.
 
-Watch the solver line under the board on a real phone. If tough levels are slow,
-the next steps are caching boards already proven dead and treating riding cubes
-at the same stop as interchangeable to shrink the search.
+Speed on this machine, in Godot: level checks take up to 1.1 s (about 7,000
+boards), and the dead-end readout takes 100 to 300 ms on the 6 to 10-tray
+levels. GDScript runs these searches about 2 to 3 times slower than Python.
