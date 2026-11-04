@@ -1,0 +1,17 @@
+{
+ "title": "Rainy-day boots",
+ "customer": "Mr. Okafor, the librarian",
+ "band": "normal",
+ "casual_win_pct": 75,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 3,
+ "loop": [[40, 80], [1040, 80], [1040, 1000], [40, 1000]],
+ "trays": [
+  {"pos": [240, 278], "facing": "up", "cubes": ["raspberry", "blueberry", "cherry", "cherry"]},
+  {"pos": [540, 278], "facing": "up", "cubes": ["raspberry", "raspberry", "cherry", "tangerine"]},
+  {"pos": [840, 278], "facing": "up", "cubes": ["tangerine", "soda", "soda", "tangerine"]},
+  {"pos": [390, 802], "facing": "down", "cubes": ["soda", "blueberry", "blueberry", "cherry"]},
+  {"pos": [690, 802], "facing": "down", "cubes": ["raspberry", "blueberry", "soda", "tangerine"]}
+ ]
+}

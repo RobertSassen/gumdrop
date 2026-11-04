@@ -17,9 +17,10 @@ a level hard"):
     hard       25 to 60%
     expert     under 25%
 
-The schedule follows the progression plan: levels 1 to 6 are tutorials, from
+The schedule follows the progression plan: levels 1 to 4 are tutorials, from
 level 12 every 5th level is hard (12, 17, 22, ...), and from level 20 every 10th
-level is expert. Everything else is normal. Cups stay between 4 and 7.
+level is expert. Everything else is normal. Cups stay between 4 and 7. Every
+level starts with an empty belt.
 
 The tutorials are not shuffled. Each is a hand-picked board that teaches one
 idea (see TUTORIALS below), and the build only checks it.
@@ -49,7 +50,7 @@ BANDS = {
 # peach) arrive later, once the player knows the board.
 FLAVOR_ORDER = ["cherry", "lemon", "blueberry", "lime", "grape", "tangerine",
                 "soda", "raspberry", "mint", "cola", "peach", "licorice"]
-FLAVOR_POOL = [(1, 6), (7, 8), (13, 10), (21, 12)]  # (from level, flavors available)
+FLAVOR_POOL = [(1, 6), (5, 8), (13, 10), (21, 12)]  # (from level, flavors available)
 
 # ---------------------------------------------------------------------------
 # Layouts. Board coordinates are 1080 x 1080. Side trays sit in two columns
@@ -116,8 +117,6 @@ LAYOUTS = {
 PLAN = [
     ("tutorial", "tri",    5, "cw",  "A lemon sun",            "Mrs. Pell, the florist"),
     ("tutorial", "rect4",  5, "cw",  "Two tulips",             "Theo from the bike shop"),
-    ("tutorial", "rect4",  5, "cw",  "Garden gate",            "Grandma Rosa"),
-    ("tutorial", "rect5",  5, "cw",  "Bluebird on a branch",   "The twins next door"),
     ("tutorial", "rect5",  5, "ccw", "Spring kite",            "Coach Lin"),
     ("tutorial", "rect6",  5, "cw",  "Strawberry patch",       "Juniper, the mail carrier"),
     ("normal",   "wide5",  5, "cw",  "Rainy-day boots",        "Mr. Okafor, the librarian", 0.80),
@@ -125,6 +124,8 @@ PLAN = [
     ("normal",   "oct6",   5, "cw",  "Cherry blossom",         "Grandma Rosa", 0.80),
     ("normal",   "rect7",  5, "ccw", "Picnic blanket",         "Theo from the bike shop", 0.80),
     ("normal",   "wide6",  5, "cw",  "Butterfly wings",        "Dr. Hale, the vet", 0.80),
+    ("normal",   "rect6",  5, "cw",  "Bluebird on a branch",   "The twins next door", 0.80),
+    ("normal",   "rect7",  5, "ccw", "Garden gate",            "Grandma Rosa", 0.80),
     ("hard",     "oct7",   5, "cw",  "Bike race trophy",       "Theo from the bike shop"),
     ("normal",   "rect6",  5, "cw",  "Robin's nest",           "Mrs. Pell, the florist"),
     ("normal",   "rect8",  6, "ccw", "Lemonade stand",         "The twins next door"),
@@ -147,46 +148,35 @@ PLAN = [
 ]
 
 # ---------------------------------------------------------------------------
-# Tutorials. Levels 1 to 6 are hand-picked boards, each teaching one idea. They
+# Tutorials. Levels 1 to 4 are hand-picked boards, each teaching one idea. They
 # were found by searching gently scrambled boards for one whose best solution
 # shows the lesson, and are checked here on every build:
 #
-#   - the casual player wins at least 90% (the tutorial band),
+#   - the casual player wins at least 90% (the tutorial band), and
 #   - a random tapper wins at least `random_min`, so a new player who taps
-#     around to see what happens still gets through, and
-#   - cubes that start on the belt can't land until the player taps.
+#     around to see what happens still gets through.
 #
+# Every level starts with an empty belt, so every tray starts full and the
+# first cube a player sends always rides round until a later tap opens a spot.
 # Flavors arrive one or two at a time: cherry, lemon and blueberry in level 1,
-# lime in 2, grape in 4 and tangerine in 6. Cubes are listed front first.
-# "riding" cubes start in cups at that tray's stop; they let a tray start with a
-# gap, so a tap can land and set a tray straight away.
+# lime in 2, grape in 3 and tangerine in 4. Cubes are listed front first.
 
 C, L, B, G, P, T = "cherry", "lemon", "blueberry", "lime", "grape", "tangerine"
 
 TUTORIALS = {
-    1: dict(lesson="Tap and land: a tap sends the front cube to the tray that matches, "
-                   "and four of a kind sets. Every tap sets a tray (2 taps).",
+    1: dict(lesson="Tap and land: the first cube rides until a spot opens, then a tap "
+                   "sends a cube to the tray that matches and four of a kind sets (3 taps).",
             random_min=0.95,
-            trays=[[C, C, C], [C, L, L, L], [L, B, B, B]],
-            riding=[{"flavor": B, "tray": 1}]),
+            trays=[[B, C, C, C], [C, L, L, L], [L, B, B, B]]),
     2: dict(lesson="Front runs: one tap sends every matching cube at the front, and they "
-                   "land together (3 taps).",
-            random_min=0.90,
-            trays=[[L, L, C, C], [L, L], [C, B, B, B], [B, G, G, G]],
-            riding=[{"flavor": C, "tray": 1}, {"flavor": G, "tray": 2}]),
-    3: dict(lesson="The belt waits: every tray starts full, so the first cube rides "
-                   "round in a cup until a tap opens a spot for it (5 taps).",
+                   "land together (4 taps).",
             random_min=0.85,
-            trays=[[L, L, G, L], [B, G, G, G], [L, C, C, C], [C, B, B, B]]),
-    4: dict(lesson="First tray that takes it: a cube lands in the first tray along the "
-                   "belt that accepts it, and an empty tray takes anything (7 taps).",
-            random_min=0.70,
-            trays=[[L, L, L, P], [P, P, P, L], [B, C, C, C], [B, B, B, G], [C, G, G, G]]),
-    5: dict(lesson="Counterclockwise: the same board shape with the belt running the "
-                   "other way, so the order of the trays flips (8 taps).",
+            trays=[[L, L, G, G], [G, G, L, L], [C, B, B, B], [B, C, C, C]]),
+    3: dict(lesson="Counterclockwise: the belt runs the other way, so the order of the "
+                   "trays flips (8 taps).",
             random_min=0.55,
             trays=[[P, L, L, L], [C, B, B, B], [G, G, L, G], [P, C, C, C], [P, G, B, P]]),
-    6: dict(lesson="Graduation: six trays and five cups. Careless taps can fill every "
+    4: dict(lesson="Graduation: six trays and five cups. Careless taps can fill every "
                    "cup, so this is the first level where Undo matters (10 taps).",
             random_min=0.25,
             trays=[[B, C, C, C], [B, L, L, B], [B, P, P, P], [T, T, G, L], [C, G, G, G],
@@ -243,15 +233,13 @@ def build_tutorial(level_no, spec):
     lv = {"title": title, "customer": customer, "band": band, "lesson": tut["lesson"],
           "direction": direction, "cups": cups, "cake_cols": layout["cake_cols"], "loop": layout["loop"],
           "trays": [dict(tr, cubes=c) for tr, c in zip(layout["trays"], tut["trays"])]}
-    if tut.get("riding"):
-        lv["riding"] = tut["riding"]
     b = Board(lv)
     low = BANDS[band][0]
     problems = []
     if any(b.set):
         problems.append("a tray starts set")
-    if b.copy().advance(b.L):
-        problems.append("a riding cube lands before the first tap")
+    if any(len(t) != CAP for t in tut["trays"]):
+        problems.append("every tray must start full (levels start with an empty belt)")
     ok, boards, _ = solve(b, SOLVE_LIMIT)
     if not ok:
         problems.append("not solvable")
@@ -317,13 +305,13 @@ def slug(title):
 
 def write_level(level_no, lv):
     key_order = ["title", "customer", "band", "lesson", "casual_win_pct", "random_win_pct", "direction",
-                 "cups", "cake_cols", "loop", "trays", "riding"]
+                 "cups", "cake_cols", "loop", "trays"]
     lines = ["{"]
     body = []
     for k in key_order:
         if k not in lv:
             continue
-        if k == "loop" or k == "riding":
+        if k == "loop":
             body.append(f' "{k}": {json.dumps(lv[k])}')
         elif k == "trays":
             trays = ",\n".join("  " + json.dumps(t) for t in lv["trays"])

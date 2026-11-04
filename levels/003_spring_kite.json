@@ -2,7 +2,7 @@
  "title": "Spring kite",
  "customer": "Coach Lin",
  "band": "tutorial",
- "lesson": "Counterclockwise: the same board shape with the belt running the other way, so the order of the trays flips (8 taps).",
+ "lesson": "Counterclockwise: the belt runs the other way, so the order of the trays flips (8 taps).",
  "casual_win_pct": 100,
  "random_win_pct": 63,
  "direction": "ccw",

@@ -108,8 +108,9 @@ tools/screenshot.gd      Saves a screenshot, optionally after some taps
   than four.
 - Flavors: cherry, tangerine, lemon, lime, mint, soda, blueberry, grape,
   raspberry, cola, licorice, peach. Colors are in `tuning.json`.
-- Optional `"riding": [{"flavor": "lime", "tray": 2}]` starts cubes in cups at a
-  tray's stop.
+- Levels always start with an empty belt, so every tray starts with four
+  cubes. (The loader still reads an optional `"riding"` list of cubes that start
+  in cups, but no level may use it, and the tests check that.)
 - `band`, `lesson`, `casual_win_pct` and `random_win_pct` are notes for
   designers: the level's difficulty band, what a tutorial teaches, and how often
   the casual player and a random tapper won it when it was built. The game
@@ -128,7 +129,7 @@ level in a band:
 
 | Band | Casual player wins | Where it goes |
 | --- | --- | --- |
-| Tutorial | 90% or more | Levels 1 to 6, then about once every 40 levels as a breather |
+| Tutorial | 90% or more | Levels 1 to 4, then about once every 40 levels as a breather |
 | Normal | 60 to 90% | Every other level (the baseline) |
 | Hard | 25 to 60% | From level 12, every 5th level (12, 17, 22…) |
 | Expert | under 25% | From level 20, every 10th level |
@@ -147,33 +148,32 @@ python3 tools/build_levels.py          # rebuild every level
 python3 tools/build_levels.py 12 17    # rebuild only levels 12 and 17
 ```
 
-New flavors unlock a few at a time (6 at first, 8 from level 7, 10 from level 13,
+New flavors unlock a few at a time (6 at first, 8 from level 5, 10 from level 13,
 all 12 from level 21), most distinct first, so look-alike pairs such as cherry
 and raspberry arrive once the player knows the board.
 
 ### Tutorials
 
-Levels 1 to 6 aren't shuffled. Each is a hand-picked board that teaches one
+Levels 1 to 4 aren't shuffled. Each is a hand-picked board that teaches one
 idea, kept in `TUTORIALS` in `tools/build_levels.py`:
 
 | Level | Lesson | Taps | Random tapper wins |
 | --- | --- | --- | --- |
-| 1 | Tap and land: every tap sets a tray | 2 | 100% |
-| 2 | Front runs: one tap sends the matching cubes together | 3 | 94% |
-| 3 | The belt waits: trays start full, a cube rides until a spot opens | 5 | 90% |
-| 4 | First tray that takes it: belt order, and empty trays take anything | 7 | 77% |
-| 5 | Counterclockwise: the same board shape, the belt reversed | 8 | 63% |
-| 6 | Graduation: six trays, five cups, the first level where Undo matters | 10 | 29% |
+| 1 | Tap and land: the first cube waits, then every tap sets a tray | 3 | 100% |
+| 2 | Front runs: one tap sends the matching cubes together | 4 | 86% |
+| 3 | Counterclockwise: the belt runs the other way | 8 | 63% |
+| 4 | Graduation: six trays, five cups, the first level where Undo matters | 10 | 29% |
 
-Taps are the fewest a level needs. Cubes that start on the belt (`riding`) let
-levels 1 and 2 begin with a gap in a tray, so the very first tap lands and sets
-a tray. They can't land until the player taps.
+Taps are the fewest a level needs. Because the belt starts empty and every tray
+starts full, the first cube a player sends can never land straight away: it
+rides until a later tap opens a spot. Level 1 makes that the whole lesson, and
+from its second tap on, every tap sets a tray.
 
 The casual player looks ahead, so it wins every tutorial. Tutorials get a second
 check: a **random tapper**, who taps any tray and waits for the belt, stands in
 for a new player trying things out. It has to win at least 95% of level 1, down
-to 25% of level 6. Flavors arrive one or two at a time: cherry, lemon and
-blueberry in level 1, lime in 2, grape in 4 and tangerine in 6.
+to 25% of level 4. Flavors arrive one or two at a time: cherry, lemon and
+blueberry in level 1, lime in 2, grape in 3 and tangerine in 4.
 
 ## Tests
 
@@ -182,9 +182,8 @@ godot --headless --path . -s res://tests/run_tests.gd
 ```
 
 The tests cover the belt and delivery rules, setting, getting stuck, clockwise
-and counterclockwise ordering, and check that every level is solvable and uses
-one flavor per tray. They also
-replay random games recorded by `tools/sim.py` and fail if Godot and the Python
+and counterclockwise ordering. They check that every level is solvable, uses
+one flavor per tray and starts with an empty belt. They also replay random games recorded by `tools/sim.py` and fail if Godot and the Python
 model ever disagree. After changing a rule in one, change the other and refresh
 the fixtures:
 

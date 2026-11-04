@@ -1,0 +1,19 @@
+{
+ "title": "Picnic blanket",
+ "customer": "Theo from the bike shop",
+ "band": "normal",
+ "casual_win_pct": 84,
+ "direction": "ccw",
+ "cups": 5,
+ "cake_cols": 4,
+ "loop": [[40, 160], [1040, 160], [1040, 1000], [40, 1000]],
+ "trays": [
+  {"pos": [540, 358], "facing": "up", "cubes": ["tangerine", "lime", "tangerine", "cherry"]},
+  {"pos": [238, 420], "facing": "left", "cubes": ["raspberry", "lime", "blueberry", "tangerine"]},
+  {"pos": [842, 420], "facing": "right", "cubes": ["blueberry", "lemon", "lemon", "raspberry"]},
+  {"pos": [238, 640], "facing": "left", "cubes": ["lemon", "soda", "blueberry", "soda"]},
+  {"pos": [842, 640], "facing": "right", "cubes": ["tangerine", "soda", "raspberry", "cherry"]},
+  {"pos": [238, 860], "facing": "left", "cubes": ["cherry", "cherry", "raspberry", "lime"]},
+  {"pos": [842, 860], "facing": "right", "cubes": ["lemon", "blueberry", "soda", "lime"]}
+ ]
+}

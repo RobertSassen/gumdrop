@@ -1,0 +1,18 @@
+{
+ "title": "Bluebird on a branch",
+ "customer": "The twins next door",
+ "band": "normal",
+ "casual_win_pct": 76,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 3,
+ "loop": [[40, 160], [1040, 160], [1040, 1000], [40, 1000]],
+ "trays": [
+  {"pos": [238, 300], "facing": "left", "cubes": ["lemon", "tangerine", "tangerine", "raspberry"]},
+  {"pos": [842, 300], "facing": "right", "cubes": ["soda", "lemon", "tangerine", "soda"]},
+  {"pos": [238, 580], "facing": "left", "cubes": ["blueberry", "cherry", "raspberry", "lemon"]},
+  {"pos": [842, 580], "facing": "right", "cubes": ["blueberry", "soda", "cherry", "raspberry"]},
+  {"pos": [238, 860], "facing": "left", "cubes": ["soda", "lemon", "cherry", "tangerine"]},
+  {"pos": [842, 860], "facing": "right", "cubes": ["blueberry", "raspberry", "blueberry", "cherry"]}
+ ]
+}
