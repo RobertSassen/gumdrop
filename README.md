@@ -35,6 +35,9 @@ finds no home keeps going round until a tray takes it. Because the belt keeps
 moving, *when* you tap can matter: it decides which tray a riding cube reaches
 first.
 
+The **cup tally** between the window cake and the board shows how many free
+cups are left. Filled cups in the tally show the flavors riding the belt.
+
 The game stops only when every cup is full and a full lap would land nothing.
 A solver readout under the board says whether the board can still be finished.
 It's there for testing and never stops the game; turn it off with
