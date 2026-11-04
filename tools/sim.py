@@ -278,6 +278,25 @@ def casual_win_rate(board, games=40, seed=0):
     return sum(casual_game(board, rnd) for _ in range(games)) / games
 
 
+def random_win_rate(board, games=200, seed=0, cap=150):
+    """Share of games won by a random tapper: someone who taps any tray that can
+    send, then waits for the belt to come round. It's the forgiveness check for
+    tutorials, where a new player still taps around to see what happens."""
+    rnd = random.Random(seed)
+    wins = 0
+    for _ in range(games):
+        b = board.copy()
+        for _ in range(cap):
+            if b.won() or b.stuck():
+                break
+            moves = [t for t in range(len(b.trays)) if b.can_tap(t)]
+            if not moves:
+                break
+            b = _patient_step(b, rnd.choice(moves))
+        wins += b.won()
+    return wins / games
+
+
 def fixtures(paths, walks=3, length=60):
     """Random legal move sequences per level, with the board key after each move."""
     out = []

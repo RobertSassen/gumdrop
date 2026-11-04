@@ -2,14 +2,17 @@
  "title": "A lemon sun",
  "customer": "Mrs. Pell, the florist",
  "band": "tutorial",
+ "lesson": "Tap and land: a tap sends the front cube to the tray that matches, and four of a kind sets. Every tap sets a tray (2 taps).",
  "casual_win_pct": 100,
+ "random_win_pct": 100,
  "direction": "cw",
  "cups": 5,
  "cake_cols": 3,
  "loop": [[40, 330], [1040, 330], [1040, 850], [40, 850]],
  "trays": [
-  {"pos": [540, 528], "facing": "up", "cubes": ["cherry", "cherry", "blueberry", "blueberry"]},
-  {"pos": [238, 700], "facing": "left", "cubes": ["blueberry", "lemon", "lemon", "lemon"]},
-  {"pos": [842, 700], "facing": "right", "cubes": ["blueberry", "lemon", "cherry", "cherry"]}
- ]
+  {"pos": [540, 528], "facing": "up", "cubes": ["cherry", "cherry", "cherry"]},
+  {"pos": [238, 700], "facing": "left", "cubes": ["cherry", "lemon", "lemon", "lemon"]},
+  {"pos": [842, 700], "facing": "right", "cubes": ["lemon", "blueberry", "blueberry", "blueberry"]}
+ ],
+ "riding": [{"flavor": "blueberry", "tray": 1}]
 }

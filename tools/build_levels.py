@@ -21,6 +21,9 @@ The schedule follows the progression plan: levels 1 to 6 are tutorials, from
 level 12 every 5th level is hard (12, 17, 22, ...), and from level 20 every 10th
 level is expert. Everything else is normal. Cups stay between 4 and 7.
 
+The tutorials are not shuffled. Each is a hand-picked board that teaches one
+idea (see TUTORIALS below), and the build only checks it.
+
     python3 tools/build_levels.py              # rebuild every level
     python3 tools/build_levels.py 12 17        # rebuild only these levels
 """
@@ -28,7 +31,7 @@ import json, os, random, sys, time
 from multiprocessing import Pool
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sim import Board, solve, casual_win_rate, CAP
+from sim import Board, solve, casual_win_rate, random_win_rate, CAP
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 LEVEL_DIR = os.path.join(ROOT, "levels")
@@ -113,10 +116,10 @@ LAYOUTS = {
 PLAN = [
     ("tutorial", "tri",    5, "cw",  "A lemon sun",            "Mrs. Pell, the florist"),
     ("tutorial", "rect4",  5, "cw",  "Two tulips",             "Theo from the bike shop"),
-    ("tutorial", "rect4",  5, "ccw", "Garden gate",            "Grandma Rosa"),
+    ("tutorial", "rect4",  5, "cw",  "Garden gate",            "Grandma Rosa"),
     ("tutorial", "rect5",  5, "cw",  "Bluebird on a branch",   "The twins next door"),
-    ("tutorial", "wide6",  6, "ccw", "Spring kite",            "Coach Lin"),
-    ("tutorial", "oct6",   5, "cw",  "Strawberry patch",       "Juniper, the mail carrier"),
+    ("tutorial", "rect5",  5, "ccw", "Spring kite",            "Coach Lin"),
+    ("tutorial", "rect6",  5, "cw",  "Strawberry patch",       "Juniper, the mail carrier"),
     ("normal",   "wide5",  5, "cw",  "Rainy-day boots",        "Mr. Okafor, the librarian", 0.80),
     ("normal",   "rect6",  5, "ccw", "Duck pond",              "The twins next door", 0.80),
     ("normal",   "oct6",   5, "cw",  "Cherry blossom",         "Grandma Rosa", 0.80),
@@ -142,6 +145,53 @@ PLAN = [
     ("normal",   "wide10", 6, "cw",  "Parade float",           "Coach Lin"),
     ("expert",   "wide9",  5, "cw",  "Spring festival window", "The mayor's office"),
 ]
+
+# ---------------------------------------------------------------------------
+# Tutorials. Levels 1 to 6 are hand-picked boards, each teaching one idea. They
+# were found by searching gently scrambled boards for one whose best solution
+# shows the lesson, and are checked here on every build:
+#
+#   - the casual player wins at least 90% (the tutorial band),
+#   - a random tapper wins at least `random_min`, so a new player who taps
+#     around to see what happens still gets through, and
+#   - cubes that start on the belt can't land until the player taps.
+#
+# Flavors arrive one or two at a time: cherry, lemon and blueberry in level 1,
+# lime in 2, grape in 4 and tangerine in 6. Cubes are listed front first.
+# "riding" cubes start in cups at that tray's stop; they let a tray start with a
+# gap, so a tap can land and set a tray straight away.
+
+C, L, B, G, P, T = "cherry", "lemon", "blueberry", "lime", "grape", "tangerine"
+
+TUTORIALS = {
+    1: dict(lesson="Tap and land: a tap sends the front cube to the tray that matches, "
+                   "and four of a kind sets. Every tap sets a tray (2 taps).",
+            random_min=0.95,
+            trays=[[C, C, C], [C, L, L, L], [L, B, B, B]],
+            riding=[{"flavor": B, "tray": 1}]),
+    2: dict(lesson="Front runs: one tap sends every matching cube at the front, and they "
+                   "land together (3 taps).",
+            random_min=0.90,
+            trays=[[L, L, C, C], [L, L], [C, B, B, B], [B, G, G, G]],
+            riding=[{"flavor": C, "tray": 1}, {"flavor": G, "tray": 2}]),
+    3: dict(lesson="The belt waits: every tray starts full, so the first cube rides "
+                   "round in a cup until a tap opens a spot for it (5 taps).",
+            random_min=0.85,
+            trays=[[L, L, G, L], [B, G, G, G], [L, C, C, C], [C, B, B, B]]),
+    4: dict(lesson="First tray that takes it: a cube lands in the first tray along the "
+                   "belt that accepts it, and an empty tray takes anything (7 taps).",
+            random_min=0.70,
+            trays=[[L, L, L, P], [P, P, P, L], [B, C, C, C], [B, B, B, G], [C, G, G, G]]),
+    5: dict(lesson="Counterclockwise: the same board shape with the belt running the "
+                   "other way, so the order of the trays flips (8 taps).",
+            random_min=0.55,
+            trays=[[P, L, L, L], [C, B, B, B], [G, G, L, G], [P, C, C, C], [P, G, B, P]]),
+    6: dict(lesson="Graduation: six trays and five cups. Careless taps can fill every "
+                   "cup, so this is the first level where Undo matters (10 taps).",
+            random_min=0.25,
+            trays=[[B, C, C, C], [B, L, L, B], [B, P, P, P], [T, T, G, L], [C, G, G, G],
+                   [P, T, T, L]]),
+}
 
 SOLVE_LIMIT = 150_000   # boards; the Godot test allows 1,000,000
 QUICK_GAMES = 16
@@ -186,8 +236,42 @@ def flavor_changes(level):
     return sum(1 for t in level["trays"] for a, b in zip(t["cubes"], t["cubes"][1:]) if a != b)
 
 
+def build_tutorial(level_no, spec):
+    band, layout_name, cups, direction, title, customer = spec[:6]
+    tut = TUTORIALS[level_no]
+    layout = LAYOUTS[layout_name]
+    lv = {"title": title, "customer": customer, "band": band, "lesson": tut["lesson"],
+          "direction": direction, "cups": cups, "cake_cols": layout["cake_cols"], "loop": layout["loop"],
+          "trays": [dict(tr, cubes=c) for tr, c in zip(layout["trays"], tut["trays"])]}
+    if tut.get("riding"):
+        lv["riding"] = tut["riding"]
+    b = Board(lv)
+    low = BANDS[band][0]
+    problems = []
+    if any(b.set):
+        problems.append("a tray starts set")
+    if b.copy().advance(b.L):
+        problems.append("a riding cube lands before the first tap")
+    ok, boards, _ = solve(b, SOLVE_LIMIT)
+    if not ok:
+        problems.append("not solvable")
+    casual = casual_win_rate(b, REPORT_GAMES, 999)
+    if casual < low:
+        problems.append(f"casual player wins only {casual:.0%}")
+    rand = random_win_rate(b, 400, 999)
+    if rand < tut["random_min"]:
+        problems.append(f"random tapper wins only {rand:.0%}, below {tut['random_min']:.0%}")
+    lv["casual_win_pct"] = round(casual * 100)
+    lv["random_win_pct"] = round(rand * 100)
+    if problems:
+        return level_no, None, "tutorial board fails its checks: " + "; ".join(problems)
+    return level_no, lv, f"hand-picked, casual {casual:.0%}, random tapper {rand:.0%}, solver {boards} boards"
+
+
 def build_one(args):
     level_no, spec = args
+    if level_no in TUTORIALS:
+        return build_tutorial(level_no, spec)
     band = spec[0]
     low, high, target = BANDS[band]
     if len(spec) > 6:
@@ -232,12 +316,15 @@ def slug(title):
 
 
 def write_level(level_no, lv):
-    key_order = ["title", "customer", "band", "casual_win_pct", "direction", "cups", "cake_cols", "loop", "trays"]
+    key_order = ["title", "customer", "band", "lesson", "casual_win_pct", "random_win_pct", "direction",
+                 "cups", "cake_cols", "loop", "trays", "riding"]
     lines = ["{"]
     body = []
     for k in key_order:
-        if k == "loop":
-            body.append(f' "loop": {json.dumps(lv["loop"])}')
+        if k not in lv:
+            continue
+        if k == "loop" or k == "riding":
+            body.append(f' "{k}": {json.dumps(lv[k])}')
         elif k == "trays":
             trays = ",\n".join("  " + json.dumps(t) for t in lv["trays"])
             body.append(' "trays": [\n' + trays + "\n ]")

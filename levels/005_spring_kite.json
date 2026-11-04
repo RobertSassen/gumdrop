@@ -2,17 +2,18 @@
  "title": "Spring kite",
  "customer": "Coach Lin",
  "band": "tutorial",
+ "lesson": "Counterclockwise: the same board shape with the belt running the other way, so the order of the trays flips (8 taps).",
  "casual_win_pct": 100,
+ "random_win_pct": 63,
  "direction": "ccw",
- "cups": 6,
+ "cups": 5,
  "cake_cols": 3,
- "loop": [[40, 100], [1040, 100], [1040, 980], [40, 980]],
+ "loop": [[40, 160], [1040, 160], [1040, 1000], [40, 1000]],
  "trays": [
-  {"pos": [240, 298], "facing": "up", "cubes": ["lime", "lime", "blueberry", "lime"]},
-  {"pos": [540, 298], "facing": "up", "cubes": ["tangerine", "lemon", "lemon", "lemon"]},
-  {"pos": [840, 298], "facing": "up", "cubes": ["blueberry", "blueberry", "tangerine", "tangerine"]},
-  {"pos": [240, 782], "facing": "down", "cubes": ["cherry", "grape", "blueberry", "cherry"]},
-  {"pos": [540, 782], "facing": "down", "cubes": ["grape", "lemon", "grape", "lime"]},
-  {"pos": [840, 782], "facing": "down", "cubes": ["tangerine", "grape", "cherry", "cherry"]}
+  {"pos": [540, 358], "facing": "up", "cubes": ["grape", "lemon", "lemon", "lemon"]},
+  {"pos": [238, 520], "facing": "left", "cubes": ["cherry", "blueberry", "blueberry", "blueberry"]},
+  {"pos": [842, 520], "facing": "right", "cubes": ["lime", "lime", "lemon", "lime"]},
+  {"pos": [238, 800], "facing": "left", "cubes": ["grape", "cherry", "cherry", "cherry"]},
+  {"pos": [842, 800], "facing": "right", "cubes": ["grape", "lime", "blueberry", "grape"]}
  ]
 }

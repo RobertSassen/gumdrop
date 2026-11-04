@@ -110,8 +110,9 @@ tools/screenshot.gd      Saves a screenshot, optionally after some taps
   raspberry, cola, licorice, peach. Colors are in `tuning.json`.
 - Optional `"riding": [{"flavor": "lime", "tray": 2}]` starts cubes in cups at a
   tray's stop.
-- `band` and `casual_win_pct` are notes for designers: the level's difficulty
-  band and how often the casual player won it when it was built. The game
+- `band`, `lesson`, `casual_win_pct` and `random_win_pct` are notes for
+  designers: the level's difficulty band, what a tutorial teaches, and how often
+  the casual player and a random tapper won it when it was built. The game
   ignores them.
 - Files are named `001_title.json`, `002_…`, and load in that order.
 
@@ -149,6 +150,30 @@ python3 tools/build_levels.py 12 17    # rebuild only levels 12 and 17
 New flavors unlock a few at a time (6 at first, 8 from level 7, 10 from level 13,
 all 12 from level 21), most distinct first, so look-alike pairs such as cherry
 and raspberry arrive once the player knows the board.
+
+### Tutorials
+
+Levels 1 to 6 aren't shuffled. Each is a hand-picked board that teaches one
+idea, kept in `TUTORIALS` in `tools/build_levels.py`:
+
+| Level | Lesson | Taps | Random tapper wins |
+| --- | --- | --- | --- |
+| 1 | Tap and land: every tap sets a tray | 2 | 100% |
+| 2 | Front runs: one tap sends the matching cubes together | 3 | 94% |
+| 3 | The belt waits: trays start full, a cube rides until a spot opens | 5 | 90% |
+| 4 | First tray that takes it: belt order, and empty trays take anything | 7 | 77% |
+| 5 | Counterclockwise: the same board shape, the belt reversed | 8 | 63% |
+| 6 | Graduation: six trays, five cups, the first level where Undo matters | 10 | 29% |
+
+Taps are the fewest a level needs. Cubes that start on the belt (`riding`) let
+levels 1 and 2 begin with a gap in a tray, so the very first tap lands and sets
+a tray. They can't land until the player taps.
+
+The casual player looks ahead, so it wins every tutorial. Tutorials get a second
+check: a **random tapper**, who taps any tray and waits for the belt, stands in
+for a new player trying things out. It has to win at least 95% of level 1, down
+to 25% of level 6. Flavors arrive one or two at a time: cherry, lemon and
+blueberry in level 1, lime in 2, grape in 4 and tangerine in 6.
 
 ## Tests
 
