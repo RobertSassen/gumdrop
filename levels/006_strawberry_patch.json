@@ -1,0 +1,18 @@
+{
+ "title": "Strawberry patch",
+ "customer": "Juniper, the mail carrier",
+ "band": "tutorial",
+ "casual_win_pct": 100,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 3,
+ "loop": [[240, 40], [840, 40], [1040, 240], [1040, 840], [840, 1040], [240, 1040], [40, 840], [40, 240]],
+ "trays": [
+  {"pos": [540, 238], "facing": "up", "cubes": ["cherry", "cherry", "lemon", "lime"]},
+  {"pos": [238, 440], "facing": "left", "cubes": ["lime", "cherry", "cherry", "grape"]},
+  {"pos": [842, 440], "facing": "right", "cubes": ["grape", "grape", "blueberry", "blueberry"]},
+  {"pos": [238, 640], "facing": "left", "cubes": ["grape", "lime", "blueberry", "blueberry"]},
+  {"pos": [842, 640], "facing": "right", "cubes": ["lemon", "tangerine", "lemon", "tangerine"]},
+  {"pos": [540, 842], "facing": "down", "cubes": ["lime", "tangerine", "tangerine", "lemon"]}
+ ]
+}

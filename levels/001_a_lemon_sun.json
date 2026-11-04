@@ -1,0 +1,15 @@
+{
+ "title": "A lemon sun",
+ "customer": "Mrs. Pell, the florist",
+ "band": "tutorial",
+ "casual_win_pct": 100,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 3,
+ "loop": [[40, 330], [1040, 330], [1040, 850], [40, 850]],
+ "trays": [
+  {"pos": [540, 528], "facing": "up", "cubes": ["cherry", "cherry", "blueberry", "blueberry"]},
+  {"pos": [238, 700], "facing": "left", "cubes": ["blueberry", "lemon", "lemon", "lemon"]},
+  {"pos": [842, 700], "facing": "right", "cubes": ["blueberry", "lemon", "cherry", "cherry"]}
+ ]
+}

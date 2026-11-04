@@ -1,0 +1,20 @@
+{
+ "title": "Hopscotch",
+ "customer": "Coach Lin",
+ "band": "normal",
+ "casual_win_pct": 72,
+ "direction": "cw",
+ "cups": 6,
+ "cake_cols": 4,
+ "loop": [[40, 60], [1040, 60], [1040, 1020], [40, 1020]],
+ "trays": [
+  {"pos": [165, 258], "facing": "up", "cubes": ["lime", "cherry", "cherry", "raspberry"]},
+  {"pos": [395, 258], "facing": "up", "cubes": ["raspberry", "lemon", "cherry", "lemon"]},
+  {"pos": [625, 258], "facing": "up", "cubes": ["lime", "blueberry", "grape", "grape"]},
+  {"pos": [855, 258], "facing": "up", "cubes": ["blueberry", "mint", "grape", "cherry"]},
+  {"pos": [165, 822], "facing": "down", "cubes": ["blueberry", "raspberry", "lemon", "mint"]},
+  {"pos": [395, 822], "facing": "down", "cubes": ["lime", "soda", "raspberry", "lemon"]},
+  {"pos": [625, 822], "facing": "down", "cubes": ["lime", "soda", "mint", "grape"]},
+  {"pos": [855, 822], "facing": "down", "cubes": ["soda", "blueberry", "soda", "mint"]}
+ ]
+}

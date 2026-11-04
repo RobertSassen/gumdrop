@@ -1,0 +1,18 @@
+{
+ "title": "Cherry blossom",
+ "customer": "Grandma Rosa",
+ "band": "normal",
+ "casual_win_pct": 82,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 3,
+ "loop": [[240, 40], [840, 40], [1040, 240], [1040, 840], [840, 1040], [240, 1040], [40, 840], [40, 240]],
+ "trays": [
+  {"pos": [540, 238], "facing": "up", "cubes": ["blueberry", "lemon", "blueberry", "lime"]},
+  {"pos": [238, 440], "facing": "left", "cubes": ["lemon", "soda", "soda", "grape"]},
+  {"pos": [842, 440], "facing": "right", "cubes": ["lime", "lemon", "grape", "blueberry"]},
+  {"pos": [238, 640], "facing": "left", "cubes": ["raspberry", "raspberry", "grape", "lime"]},
+  {"pos": [842, 640], "facing": "right", "cubes": ["raspberry", "soda", "soda", "lemon"]},
+  {"pos": [540, 842], "facing": "down", "cubes": ["blueberry", "lime", "raspberry", "grape"]}
+ ]
+}

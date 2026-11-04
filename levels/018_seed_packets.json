@@ -1,0 +1,19 @@
+{
+ "title": "Seed packets",
+ "customer": "Mrs. Pell, the florist",
+ "band": "normal",
+ "casual_win_pct": 78,
+ "direction": "ccw",
+ "cups": 5,
+ "cake_cols": 4,
+ "loop": [[240, 40], [840, 40], [1040, 240], [1040, 840], [840, 1040], [240, 1040], [40, 840], [40, 240]],
+ "trays": [
+  {"pos": [540, 238], "facing": "up", "cubes": ["blueberry", "mint", "cola", "mint"]},
+  {"pos": [238, 340], "facing": "left", "cubes": ["cola", "soda", "blueberry", "lemon"]},
+  {"pos": [842, 340], "facing": "right", "cubes": ["lemon", "tangerine", "soda", "cola"]},
+  {"pos": [238, 540], "facing": "left", "cubes": ["grape", "grape", "cola", "grape"]},
+  {"pos": [842, 540], "facing": "right", "cubes": ["tangerine", "soda", "tangerine", "lemon"]},
+  {"pos": [238, 740], "facing": "left", "cubes": ["mint", "mint", "blueberry", "grape"]},
+  {"pos": [842, 740], "facing": "right", "cubes": ["soda", "lemon", "tangerine", "blueberry"]}
+ ]
+}

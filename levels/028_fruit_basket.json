@@ -1,0 +1,21 @@
+{
+ "title": "Fruit basket",
+ "customer": "Bea from the cheese stall",
+ "band": "normal",
+ "casual_win_pct": 72,
+ "direction": "ccw",
+ "cups": 6,
+ "cake_cols": 3,
+ "loop": [[40, 30], [1040, 30], [1040, 1050], [40, 1050]],
+ "trays": [
+  {"pos": [540, 228], "facing": "up", "cubes": ["raspberry", "lemon", "raspberry", "lime"]},
+  {"pos": [238, 270], "facing": "left", "cubes": ["peach", "peach", "peach", "tangerine"]},
+  {"pos": [842, 270], "facing": "right", "cubes": ["lime", "tangerine", "lime", "lemon"]},
+  {"pos": [238, 480], "facing": "left", "cubes": ["raspberry", "soda", "soda", "lemon"]},
+  {"pos": [842, 480], "facing": "right", "cubes": ["grape", "cherry", "lemon", "peach"]},
+  {"pos": [238, 690], "facing": "left", "cubes": ["cherry", "soda", "cherry", "lime"]},
+  {"pos": [842, 690], "facing": "right", "cubes": ["grape", "cola", "raspberry", "cola"]},
+  {"pos": [238, 900], "facing": "left", "cubes": ["soda", "tangerine", "cola", "grape"]},
+  {"pos": [842, 900], "facing": "right", "cubes": ["grape", "tangerine", "cola", "cherry"]}
+ ]
+}

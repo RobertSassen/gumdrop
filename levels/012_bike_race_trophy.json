@@ -1,0 +1,19 @@
+{
+ "title": "Bike race trophy",
+ "customer": "Theo from the bike shop",
+ "band": "hard",
+ "casual_win_pct": 44,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 4,
+ "loop": [[240, 40], [840, 40], [1040, 240], [1040, 840], [840, 1040], [240, 1040], [40, 840], [40, 240]],
+ "trays": [
+  {"pos": [540, 238], "facing": "up", "cubes": ["cherry", "grape", "cherry", "blueberry"]},
+  {"pos": [238, 340], "facing": "left", "cubes": ["tangerine", "blueberry", "cherry", "raspberry"]},
+  {"pos": [842, 340], "facing": "right", "cubes": ["grape", "raspberry", "tangerine", "lemon"]},
+  {"pos": [238, 540], "facing": "left", "cubes": ["lemon", "raspberry", "lime", "blueberry"]},
+  {"pos": [842, 540], "facing": "right", "cubes": ["raspberry", "lime", "grape", "blueberry"]},
+  {"pos": [238, 740], "facing": "left", "cubes": ["lemon", "tangerine", "grape", "lemon"]},
+  {"pos": [842, 740], "facing": "right", "cubes": ["lime", "tangerine", "cherry", "lime"]}
+ ]
+}

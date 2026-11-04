@@ -1,0 +1,21 @@
+{
+ "title": "Spring festival window",
+ "customer": "The mayor's office",
+ "band": "expert",
+ "casual_win_pct": 17,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 3,
+ "loop": [[40, 60], [1040, 60], [1040, 1020], [40, 1020]],
+ "trays": [
+  {"pos": [165, 258], "facing": "up", "cubes": ["blueberry", "blueberry", "licorice", "lime"]},
+  {"pos": [395, 258], "facing": "up", "cubes": ["cherry", "mint", "cherry", "peach"]},
+  {"pos": [625, 258], "facing": "up", "cubes": ["soda", "mint", "lime", "grape"]},
+  {"pos": [855, 258], "facing": "up", "cubes": ["soda", "blueberry", "blueberry", "lemon"]},
+  {"pos": [238, 540], "facing": "left", "cubes": ["cherry", "grape", "cherry", "lime"]},
+  {"pos": [842, 540], "facing": "right", "cubes": ["mint", "peach", "lemon", "mint"]},
+  {"pos": [240, 822], "facing": "down", "cubes": ["lime", "grape", "soda", "grape"]},
+  {"pos": [540, 822], "facing": "down", "cubes": ["licorice", "peach", "lemon", "licorice"]},
+  {"pos": [840, 822], "facing": "down", "cubes": ["licorice", "soda", "peach", "lemon"]}
+ ]
+}

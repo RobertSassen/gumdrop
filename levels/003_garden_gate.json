@@ -1,0 +1,16 @@
+{
+ "title": "Garden gate",
+ "customer": "Grandma Rosa",
+ "band": "tutorial",
+ "casual_win_pct": 100,
+ "direction": "ccw",
+ "cups": 5,
+ "cake_cols": 2,
+ "loop": [[40, 300], [1040, 300], [1040, 860], [40, 860]],
+ "trays": [
+  {"pos": [238, 440], "facing": "left", "cubes": ["lime", "tangerine", "tangerine", "grape"]},
+  {"pos": [842, 440], "facing": "right", "cubes": ["tangerine", "tangerine", "blueberry", "blueberry"]},
+  {"pos": [238, 720], "facing": "left", "cubes": ["grape", "blueberry", "blueberry", "grape"]},
+  {"pos": [842, 720], "facing": "right", "cubes": ["lime", "grape", "lime", "lime"]}
+ ]
+}

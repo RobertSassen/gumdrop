@@ -1,0 +1,20 @@
+{
+ "title": "Puddle jumper",
+ "customer": "Juniper, the mail carrier",
+ "band": "normal",
+ "casual_win_pct": 73,
+ "direction": "cw",
+ "cups": 6,
+ "cake_cols": 4,
+ "loop": [[40, 50], [1040, 50], [1040, 990], [40, 990]],
+ "trays": [
+  {"pos": [238, 190], "facing": "left", "cubes": ["blueberry", "cola", "mint", "blueberry"]},
+  {"pos": [842, 190], "facing": "right", "cubes": ["lemon", "raspberry", "blueberry", "soda"]},
+  {"pos": [238, 410], "facing": "left", "cubes": ["cola", "mint", "cherry", "lemon"]},
+  {"pos": [842, 410], "facing": "right", "cubes": ["tangerine", "cherry", "raspberry", "soda"]},
+  {"pos": [238, 630], "facing": "left", "cubes": ["tangerine", "cherry", "lemon", "soda"]},
+  {"pos": [842, 630], "facing": "right", "cubes": ["cola", "tangerine", "raspberry", "raspberry"]},
+  {"pos": [238, 850], "facing": "left", "cubes": ["mint", "cherry", "soda", "tangerine"]},
+  {"pos": [842, 850], "facing": "right", "cubes": ["mint", "cola", "blueberry", "lemon"]}
+ ]
+}

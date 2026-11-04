@@ -1,0 +1,20 @@
+{
+ "title": "Clock tower",
+ "customer": "Mr. Okafor, the librarian",
+ "band": "hard",
+ "casual_win_pct": 36,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 4,
+ "loop": [[40, 60], [1040, 60], [1040, 1020], [40, 1020]],
+ "trays": [
+  {"pos": [165, 258], "facing": "up", "cubes": ["lemon", "cola", "soda", "cola"]},
+  {"pos": [395, 258], "facing": "up", "cubes": ["tangerine", "lemon", "lemon", "lime"]},
+  {"pos": [625, 258], "facing": "up", "cubes": ["peach", "lemon", "peach", "peach"]},
+  {"pos": [855, 258], "facing": "up", "cubes": ["soda", "blueberry", "soda", "cola"]},
+  {"pos": [165, 822], "facing": "down", "cubes": ["tangerine", "blueberry", "blueberry", "cherry"]},
+  {"pos": [395, 822], "facing": "down", "cubes": ["peach", "lime", "tangerine", "blueberry"]},
+  {"pos": [625, 822], "facing": "down", "cubes": ["lime", "soda", "tangerine", "cherry"]},
+  {"pos": [855, 822], "facing": "down", "cubes": ["cherry", "lime", "cola", "cherry"]}
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "title": "Choir robes",
+ "customer": "The school choir",
+ "band": "normal",
+ "casual_win_pct": 75,
+ "direction": "ccw",
+ "cups": 6,
+ "cake_cols": 3,
+ "loop": [[40, 60], [1040, 60], [1040, 1020], [40, 1020]],
+ "trays": [
+  {"pos": [165, 258], "facing": "up", "cubes": ["peach", "raspberry", "cherry", "mint"]},
+  {"pos": [395, 258], "facing": "up", "cubes": ["lemon", "soda", "peach", "cherry"]},
+  {"pos": [625, 258], "facing": "up", "cubes": ["blueberry", "soda", "lemon", "raspberry"]},
+  {"pos": [855, 258], "facing": "up", "cubes": ["mint", "soda", "cola", "peach"]},
+  {"pos": [238, 540], "facing": "left", "cubes": ["tangerine", "mint", "raspberry", "cherry"]},
+  {"pos": [842, 540], "facing": "right", "cubes": ["blueberry", "cherry", "cola", "blueberry"]},
+  {"pos": [240, 822], "facing": "down", "cubes": ["cola", "soda", "lemon", "mint"]},
+  {"pos": [540, 822], "facing": "down", "cubes": ["tangerine", "blueberry", "tangerine", "lemon"]},
+  {"pos": [840, 822], "facing": "down", "cubes": ["raspberry", "tangerine", "peach", "cola"]}
+ ]
+}
