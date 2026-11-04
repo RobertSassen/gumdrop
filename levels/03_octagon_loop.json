@@ -1,0 +1,121 @@
+{
+ "title": "Raspberry bouquet",
+ "customer": "The twins next door",
+ "direction": "cw",
+ "cups": 4,
+ "cake_cols": 3,
+ "loop": [
+  [
+   240,
+   40
+  ],
+  [
+   840,
+   40
+  ],
+  [
+   1040,
+   240
+  ],
+  [
+   1040,
+   840
+  ],
+  [
+   840,
+   1040
+  ],
+  [
+   240,
+   1040
+  ],
+  [
+   40,
+   840
+  ],
+  [
+   40,
+   240
+  ]
+ ],
+ "trays": [
+  {
+   "pos": [
+    540,
+    230
+   ],
+   "facing": "up",
+   "cubes": [
+    "lemon",
+    "raspberry",
+    "blueberry",
+    "blueberry"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    440
+   ],
+   "facing": "left",
+   "cubes": [
+    "grape",
+    "peach",
+    "raspberry",
+    "blueberry"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    440
+   ],
+   "facing": "right",
+   "cubes": [
+    "blueberry",
+    "lemon",
+    "mint",
+    "grape"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    640
+   ],
+   "facing": "left",
+   "cubes": [
+    "peach",
+    "raspberry",
+    "lemon",
+    "mint"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    640
+   ],
+   "facing": "right",
+   "cubes": [
+    "grape",
+    "peach",
+    "mint",
+    "grape"
+   ]
+  },
+  {
+   "pos": [
+    540,
+    850
+   ],
+   "facing": "down",
+   "cubes": [
+    "lemon",
+    "mint",
+    "peach",
+    "raspberry"
+   ]
+  }
+ ]
+}

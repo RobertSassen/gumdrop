@@ -1,0 +1,105 @@
+{
+ "title": "Plum sunset",
+ "customer": "Theo from the bike shop",
+ "direction": "ccw",
+ "cups": 4,
+ "cake_cols": 3,
+ "loop": [
+  [
+   40,
+   160
+  ],
+  [
+   1040,
+   160
+  ],
+  [
+   1040,
+   1000
+  ],
+  [
+   40,
+   1000
+  ]
+ ],
+ "trays": [
+  {
+   "pos": [
+    238,
+    300
+   ],
+   "facing": "left",
+   "cubes": [
+    "lemon",
+    "soda",
+    "tangerine",
+    "grape"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    300
+   ],
+   "facing": "right",
+   "cubes": [
+    "lemon",
+    "cherry",
+    "lime",
+    "tangerine"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    580
+   ],
+   "facing": "left",
+   "cubes": [
+    "grape",
+    "grape",
+    "soda",
+    "tangerine"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    580
+   ],
+   "facing": "right",
+   "cubes": [
+    "lime",
+    "cherry",
+    "lime",
+    "lemon"
+   ]
+  },
+  {
+   "pos": [
+    238,
+    860
+   ],
+   "facing": "left",
+   "cubes": [
+    "lemon",
+    "lime",
+    "tangerine",
+    "soda"
+   ]
+  },
+  {
+   "pos": [
+    842,
+    860
+   ],
+   "facing": "right",
+   "cubes": [
+    "cherry",
+    "grape",
+    "cherry",
+    "soda"
+   ]
+  }
+ ]
+}
