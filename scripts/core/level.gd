@@ -8,6 +8,7 @@ extends RefCounted
 ## projected onto the loop, and that position along the loop orders the trays.
 
 const BoardState = preload("res://scripts/core/board_state.gd")
+const Tuning = preload("res://scripts/core/tuning.gd")
 
 const FLAVORS := ["cherry", "tangerine", "lemon", "lime", "raspberry", "grape", "blueberry"]
 const FACINGS := {
@@ -65,7 +66,7 @@ func from_dict(d: Dictionary) -> void:
 	title = d.get("title", "Untitled order")
 	customer = d.get("customer", "")
 	direction = d.get("direction", "cw")
-	cups = int(d.get("cups", 4))
+	cups = int(d.get("cups", Tuning.integer("rules", "default_cups")))
 	cake_cols = int(d.get("cake_cols", 0))
 	loop = PackedVector2Array()
 	for p in d["loop"]:
@@ -100,7 +101,7 @@ func tray_count() -> int:
 # --- Tray geometry ---------------------------------------------------------
 
 func tray_long() -> float:
-	return BoardState.CAPACITY * CELL + TRAY_PAD * 2.0
+	return Tuning.integer("rules", "tray_capacity") * CELL + TRAY_PAD * 2.0
 
 
 func tray_rect(t: int) -> Rect2:
@@ -189,21 +190,24 @@ func hop_length(from_stop: int) -> float:
 	return loop_length if hop == 0.0 else hop
 
 
-## Where a cube is after riding `progress` stops from `start_stop`, held
-## `back` pixels behind that spot so cubes that share a stop don't overlap.
-func ride_point(start_stop: int, progress: float, back: float = 0.0) -> Vector2:
-	var n := travel_order.size()
-	var whole := floori(progress)
-	var d := tray_dist[travel_order[start_stop]]
-	for i in whole:
-		d += hop_length((start_stop + i) % n) * travel_sign()
-	d += hop_length((start_stop + whole) % n) * (progress - whole) * travel_sign()
-	return point_at(d - back * travel_sign())
-
-
 ## Unit vector pointing the way cubes travel at distance d along the loop.
 func travel_tangent(dist: float) -> Vector2:
 	return (point_at(dist + 2.0) - point_at(dist - 2.0)).normalized() * travel_sign()
+
+
+## Distance along the belt from a stop to the stop `steps` further on.
+func ride_distance(start_stop: int, steps: int) -> float:
+	var n := travel_order.size()
+	var d := 0.0
+	for i in steps:
+		d += hop_length((start_stop + i) % n)
+	return d
+
+
+## Where a cube is after travelling `travelled` pixels from its start stop,
+## held `back` pixels behind so cubes that share a stop don't overlap.
+func ride_point_at(start_stop: int, travelled: float, back: float = 0.0) -> Vector2:
+	return point_at(tray_dist[travel_order[start_stop]] + (travelled - back) * travel_sign())
 
 
 func stop_point(stop: int) -> Vector2:

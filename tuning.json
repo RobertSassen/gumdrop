@@ -1,0 +1,62 @@
+{
+ "_readme": "Global game values. Edit, save, then press T in the running game (or restart it). Keys starting with _ are notes. Leave a key out to use its default from scripts/core/tuning.gd.",
+
+ "rules": {
+  "_notes": "Changing these changes every puzzle. Re-check the levels after a change: python3 tools/sim.py levels/*.json",
+  "tray_capacity": 4,
+  "default_cups": 4
+ },
+
+ "loop": {
+  "_notes": "How cubes move. Speed is along the belt in screen pixels (the screen is 1080 wide). Lap time is clamped so small and large loops both feel right.",
+  "belt_speed_px_per_sec": 1400,
+  "min_lap_seconds": 0.8,
+  "max_lap_seconds": 2.4,
+  "settle_pause_seconds": 0.08,
+  "queue_taps_during_animation": true,
+  "riding_cube_gap_px": 50
+ },
+
+ "feedback": {
+  "_notes": "The tray wobble when a tap can't send anything (no free cups).",
+  "wobble_seconds": 0.35,
+  "wobble_px": 9,
+  "wobble_speed": 50
+ },
+
+ "solver": {
+  "_notes": "Dead-end check after each move. When a budget runs out the game says the solver gave up instead of calling a dead end.",
+  "enabled": true,
+  "max_boards": 300000,
+  "max_milliseconds": 3000
+ },
+
+ "look": {
+  "_notes": "Sizes in screen pixels; colors as hex. Cube size must stay under 76 (the tray cavity).",
+  "cube_size_px": 62,
+  "riding_cube_scale": 0.68,
+  "belt_width_px": 58,
+  "arrow_spacing_px": 150,
+  "flavors": {
+   "cherry": "#e2445c",
+   "tangerine": "#f28c38",
+   "lemon": "#f2c53d",
+   "lime": "#86c046",
+   "raspberry": "#e8619f",
+   "grape": "#8e5bc2",
+   "blueberry": "#3f7fd9"
+  },
+  "colors": {
+   "background": "#f6ebdd",
+   "counter": "#d9b48a",
+   "counter_edge": "#8a6240",
+   "belt": "#c9c2ba",
+   "belt_edge": "#9d958c",
+   "tray": "#fffaf3",
+   "cavity": "#efe3d3",
+   "cup": "#ffffff",
+   "ink": "#4a3426",
+   "ink_soft": "#8c7462"
+  }
+ }
+}

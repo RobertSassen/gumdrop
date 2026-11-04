@@ -8,6 +8,7 @@ extends SceneTree
 const BoardState = preload("res://scripts/core/board_state.gd")
 const Level = preload("res://scripts/core/level.gd")
 const Solver = preload("res://scripts/core/solver.gd")
+const Tuning = preload("res://scripts/core/tuning.gd")
 
 const R := 0  # cherry
 const O := 1  # tangerine
@@ -29,6 +30,7 @@ func _init() -> void:
 	test_no_free_cups_means_stuck()
 	test_solver_finds_unsolvable()
 	test_counterclockwise_reverses_order()
+	test_tuning_file_loads()
 	test_levels_match_python_model()
 	test_levels_are_solvable()
 	print("\n%d checks, %d failed" % [checks, failures])
@@ -49,7 +51,7 @@ func make(trays: Array, cups: int):
 	for i in trays.size():
 		order.append(i)
 	var b = BoardState.new()
-	b.setup(trays, order, cups)
+	b.setup(trays, order, cups, [], 4)
 	return b
 
 
@@ -158,6 +160,15 @@ func test_counterclockwise_reverses_order() -> void:
 	lv = Level.new()
 	lv.from_dict(d)
 	check(lv.travel_order == PackedInt32Array([2, 1, 0]), "counterclockwise reverses it")
+
+
+func test_tuning_file_loads() -> void:
+	Tuning.reload()
+	check(Tuning.last_message == "Tuning loaded", "tuning.json parses: " + Tuning.last_message)
+	check(Tuning.integer("rules", "tray_capacity") >= 2, "tray capacity is sensible")
+	check(Tuning.num("loop", "belt_speed_px_per_sec") > 0.0, "belt speed is positive")
+	for f in Level.FLAVORS:
+		check(Tuning.flavor_color(f).a > 0.0, "flavor %s has a color" % f)
 
 
 func _level_paths() -> PackedStringArray:

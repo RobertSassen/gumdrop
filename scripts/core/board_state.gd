@@ -10,8 +10,10 @@ extends RefCounted
 ## verify levels. Keep the two in step: tests/run_tests.gd replays traces
 ## recorded by the Python model and fails if they disagree.
 
-const CAPACITY := 4
+const Tuning = preload("res://scripts/core/tuning.gd")
 
+## Cavities per tray (tuning.json: rules.tray_capacity).
+var capacity: int = 4
 var cups: int = 0
 ## stop index -> tray index, in the level's travel direction.
 var order: PackedInt32Array = PackedInt32Array()
@@ -28,7 +30,10 @@ var riding: Array = []
 ## trays_back_to_front: Array of Arrays of flavor ids.
 ## travel_order: tray indices in the order a cube passes them.
 ## start_riding: Array of Vector2i(flavor, tray index).
-func setup(trays_back_to_front: Array, travel_order: PackedInt32Array, cup_count: int, start_riding: Array = []) -> void:
+## tray_capacity: 0 means use tuning.json.
+func setup(trays_back_to_front: Array, travel_order: PackedInt32Array, cup_count: int,
+		start_riding: Array = [], tray_capacity: int = 0) -> void:
+	capacity = tray_capacity if tray_capacity > 0 else Tuning.integer("rules", "tray_capacity")
 	cups = cup_count
 	order = travel_order.duplicate()
 	stop_of.resize(order.size())
@@ -48,6 +53,7 @@ func setup(trays_back_to_front: Array, travel_order: PackedInt32Array, cup_count
 
 func copy():
 	var b = get_script().new()
+	b.capacity = capacity
 	b.cups = cups
 	b.order = order
 	b.stop_of = stop_of
@@ -86,7 +92,7 @@ func accepts(t: int, flavor: int) -> bool:
 	if set_flags[t]:
 		return false
 	var tray: Array = trays[t]
-	if tray.size() >= CAPACITY:
+	if tray.size() >= capacity:
 		return false
 	return tray.is_empty() or tray[tray.size() - 1] == flavor
 
@@ -180,7 +186,7 @@ func _check_set(t: int) -> bool:
 	if set_flags[t]:
 		return false
 	var tray: Array = trays[t]
-	if tray.size() != CAPACITY:
+	if tray.size() != capacity:
 		return false
 	for c in tray:
 		if c != tray[0]:

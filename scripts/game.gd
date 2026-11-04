@@ -5,35 +5,33 @@ extends Node2D
 
 const Level = preload("res://scripts/core/level.gd")
 const Solver = preload("res://scripts/core/solver.gd")
+const Tuning = preload("res://scripts/core/tuning.gd")
 
 const LEVEL_DIR := "res://levels/"
 const SCREEN := Vector2(1080, 1920)
 const BOARD_ORIGIN := Vector2(0, 590)
 const CAKE_RECT := Rect2(150, 150, 780, 400)
 
-const FLAVOR_COLORS := [
-	Color("e2445c"),  # cherry
-	Color("f28c38"),  # tangerine
-	Color("f2c53d"),  # lemon
-	Color("86c046"),  # lime
-	Color("e8619f"),  # raspberry
-	Color("8e5bc2"),  # grape
-	Color("3f7fd9"),  # blueberry
-]
-const BG := Color("f6ebdd")
-const WOOD := Color("d9b48a")
-const WOOD_DARK := Color("8a6240")
-const INK := Color("4a3426")
-const INK_SOFT := Color("8c7462")
-const TRAY_FILL := Color("fffaf3")
-const CAVITY := Color("efe3d3")
-const BELT := Color("c9c2ba")
-const BELT_EDGE := Color("9d958c")
-const CUP := Color("ffffff")
-
-const CUBE_SIZE := 62.0
-const CUP_SPACING := 50.0
-const WOBBLE_TIME := 0.35
+## Values from tuning.json, refreshed by _apply_tuning().
+var flavor_colors: Array = []
+var col_bg: Color
+var col_counter: Color
+var col_counter_edge: Color
+var col_ink: Color
+var col_ink_soft: Color
+var col_tray: Color
+var col_cavity: Color
+var col_belt: Color
+var col_belt_edge: Color
+var col_cup: Color
+var cube_size := 62.0
+var riding_scale := 0.68
+var cube_gap := 50.0
+var belt_width := 58.0
+var arrow_spacing := 150.0
+var wobble_time := 0.35
+var wobble_px := 9.0
+var wobble_speed := 50.0
 
 var level_files: PackedStringArray = PackedStringArray()
 var level_index := 0
@@ -41,8 +39,9 @@ var level  # Level
 var board  # BoardState: the true state, already resolved past any animation
 var history: Array = []  # BoardState snapshots for undo
 
-## Animation of the last tap. Empty when idle. Keys: trace, shown (a board
-## that gains cubes as they land), t, step, applied.
+## Animation of the last tap. Empty when idle. Keys: trace (each cube also
+## gets "dist", the belt distance it rides), shown (a board that gains cubes
+## as they land), t, speed (px/s), lap (px), applied.
 var anim: Dictionary = {}
 var tap_queue: Array = []
 var wobble := {}  # tray -> time the wobble started
@@ -68,7 +67,8 @@ var buttons := {}
 
 func _ready() -> void:
 	font = ThemeDB.fallback_font
-	_make_styles()
+	Tuning.reload()
+	_apply_tuning()
 	_build_toolbar()
 	level_files = _find_levels()
 	if level_files.is_empty():
@@ -115,6 +115,13 @@ func _load_level(i: int) -> void:
 # --- Input -----------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_T:
+		Tuning.reload()
+		_apply_tuning()
+		if level != null:
+			_load_level(level_index)
+		solver_text = Tuning.last_message
+		return
 	if level == null:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -132,7 +139,8 @@ func _on_tray_tapped(t: int) -> void:
 		return
 	if not anim.is_empty():
 		# Spec: taps made during animation are queued.
-		tap_queue.append(t)
+		if Tuning.flag("loop", "queue_taps_during_animation"):
+			tap_queue.append(t)
 		return
 	_do_tap(t)
 
@@ -151,12 +159,19 @@ func _do_tap(t: int) -> void:
 	for i in trace["launched"]:
 		(shown.trays[t] as Array).pop_back()
 	shown.riding = []
-	var n: int = trace["steps"]
+	for c in trace["cubes"]:
+		c["dist"] = level.ride_distance(c["start"], c["steps"])
+	# Every cube rides at most one lap, so the lap sets how long the move takes.
+	var lap: float = level.loop_length
+	var speed := clampf(Tuning.num("loop", "belt_speed_px_per_sec"),
+			lap / maxf(Tuning.num("loop", "max_lap_seconds"), 0.01),
+			lap / maxf(Tuning.num("loop", "min_lap_seconds"), 0.01))
 	anim = {
 		"trace": trace,
 		"shown": shown,
 		"t": 0.0,
-		"step": clampf(1.6 / n, 0.12, 0.3),
+		"speed": speed,
+		"lap": lap,
 		"applied": {},
 	}
 	_update_buttons()
@@ -197,16 +212,17 @@ func _process(delta: float) -> void:
 func _advance_anim(delta: float) -> void:
 	anim["t"] += delta
 	var trace: Dictionary = anim["trace"]
-	var step: float = anim["step"]
+	var travelled: float = anim["t"] * anim["speed"]
 	var shown = anim["shown"]
 	var cubes: Array = trace["cubes"]
 	for i in cubes.size():
 		var c: Dictionary = cubes[i]
-		if c["land"] != -1 and not anim["applied"].has(i) and anim["t"] >= c["steps"] * step:
+		if c["land"] != -1 and not anim["applied"].has(i) and travelled >= c["dist"]:
 			(shown.trays[c["land"]] as Array).append(c["flavor"])
 			shown._check_set(c["land"])
 			anim["applied"][i] = true
-	if anim["t"] >= trace["steps"] * step + 0.08:
+	var settle: float = Tuning.num("loop", "settle_pause_seconds") * anim["speed"]
+	if travelled >= anim["lap"] + settle:
 		anim = {}
 		while not tap_queue.is_empty():
 			var queued: int = tap_queue.pop_front()
@@ -231,8 +247,14 @@ func _evaluate() -> void:
 		status_text = "Every cup is full and nothing can land."
 		solver_text = ""
 		return
+	if not Tuning.flag("solver", "enabled"):
+		solver_text = "Solver off (tuning.json)"
+		return
 	solver_text = "Checking the recipe..."
-	var job := {"solver": Solver.new(), "board": board.copy(), "result": {}, "stale": false}
+	var solver = Solver.new()
+	solver.max_states = Tuning.integer("solver", "max_boards")
+	solver.max_msec = Tuning.integer("solver", "max_milliseconds")
+	var job := {"solver": solver, "board": board.copy(), "result": {}, "stale": false}
 	job["task"] = WorkerThreadPool.add_task(func(): job["result"] = job["solver"].solve(job["board"]))
 	solver_jobs.append(job)
 
@@ -294,16 +316,45 @@ func _update_buttons() -> void:
 
 # --- Drawing ---------------------------------------------------------------
 
+## Reads every look and feel value from tuning.json into this scene.
+func _apply_tuning() -> void:
+	flavor_colors = []
+	for f in Level.FLAVORS:
+		flavor_colors.append(Tuning.flavor_color(f))
+	col_bg = Tuning.color("background")
+	col_counter = Tuning.color("counter")
+	col_counter_edge = Tuning.color("counter_edge")
+	col_ink = Tuning.color("ink")
+	col_ink_soft = Tuning.color("ink_soft")
+	col_tray = Tuning.color("tray")
+	col_cavity = Tuning.color("cavity")
+	col_belt = Tuning.color("belt")
+	col_belt_edge = Tuning.color("belt_edge")
+	col_cup = Tuning.color("cup")
+	cube_size = minf(Tuning.num("look", "cube_size_px"), Level.CELL - 4.0)
+	riding_scale = Tuning.num("look", "riding_cube_scale")
+	cube_gap = Tuning.num("loop", "riding_cube_gap_px")
+	belt_width = Tuning.num("look", "belt_width_px")
+	arrow_spacing = maxf(Tuning.num("look", "arrow_spacing_px"), 40.0)
+	wobble_time = maxf(Tuning.num("feedback", "wobble_seconds"), 0.01)
+	wobble_px = Tuning.num("feedback", "wobble_px")
+	wobble_speed = Tuning.num("feedback", "wobble_speed")
+	_make_styles()
+
+
 func _make_styles() -> void:
-	tray_box = _box(TRAY_FILL, 20, Color("d8c6b0"), 3)
-	for c in FLAVOR_COLORS:
+	tray_set_boxes = []
+	cube_boxes = []
+	pane_boxes = []
+	tray_box = _box(col_tray, 20, Color("d8c6b0"), 3)
+	for c in flavor_colors:
 		cube_boxes.append(_box(c, 14, c.darkened(0.25), 2))
 		tray_set_boxes.append(_box(c.lerp(Color.WHITE, 0.72), 20, c.darkened(0.1), 5))
 		pane_boxes.append(_box(c, 10, c.darkened(0.3), 3))
 	pane_empty_box = _box(Color(1, 1, 1, 0.55), 10, Color("cdbba6"), 2)
-	counter_box = _box(WOOD, 40, WOOD_DARK, 4)
+	counter_box = _box(col_counter, 40, col_counter_edge, 4)
 	cake_frame_box = _box(Color("5b4030"), 26, Color("3d2a1f"), 4)
-	banner_box = _box(Color(1, 0.98, 0.94, 0.94), 28, WOOD_DARK, 4)
+	banner_box = _box(Color(1, 0.98, 0.94, 0.94), 28, col_counter_edge, 4)
 
 
 func _box(fill: Color, radius: int, border: Color, border_w: int) -> StyleBoxFlat:
@@ -317,9 +368,9 @@ func _box(fill: Color, radius: int, border: Color, border_w: int) -> StyleBoxFla
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, SCREEN), BG)
+	draw_rect(Rect2(Vector2.ZERO, SCREEN), col_bg)
 	if level == null:
-		_text(status_text, Vector2(SCREEN.x / 2, 900), 36, INK)
+		_text(status_text, Vector2(SCREEN.x / 2, 900), 36, col_ink)
 		return
 	var shown = board if anim.is_empty() else anim["shown"]
 	_draw_header()
@@ -337,8 +388,8 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 
 	_draw_cup_row()
-	_text(status_text, Vector2(SCREEN.x / 2, 1752), 32, INK)
-	_text(solver_text, Vector2(SCREEN.x / 2, 1785), 22, INK_SOFT)
+	_text(status_text, Vector2(SCREEN.x / 2, 1752), 32, col_ink)
+	_text(solver_text, Vector2(SCREEN.x / 2, 1785), 22, col_ink_soft)
 	if anim.is_empty() and (dead_end or board.is_won()):
 		_draw_banner()
 
@@ -351,10 +402,10 @@ func _text(s: String, center: Vector2, size: int, color: Color) -> void:
 
 
 func _draw_header() -> void:
-	_text("%d. %s" % [level_index + 1, level.title], Vector2(SCREEN.x / 2, 70), 44, INK)
+	_text("%d. %s" % [level_index + 1, level.title], Vector2(SCREEN.x / 2, 70), 44, col_ink)
 	var dir_word := "counterclockwise" if level.direction == "ccw" else "clockwise"
 	var sub := "%s · loop runs %s" % [level.customer, dir_word] if level.customer != "" else "Loop runs " + dir_word
-	_text(sub, Vector2(SCREEN.x / 2, 118), 26, INK_SOFT)
+	_text(sub, Vector2(SCREEN.x / 2, 118), 26, col_ink_soft)
 
 
 ## The window cake: one pane per tray, filled with the tray's flavor once it sets.
@@ -385,15 +436,14 @@ func _draw_cake(shown) -> void:
 func _draw_loop() -> void:
 	var pts: PackedVector2Array = level.loop.duplicate()
 	pts.append(pts[0])
-	draw_polyline(pts, BELT_EDGE, 66.0, true)
+	draw_polyline(pts, col_belt_edge, belt_width + 8.0, true)
 	for p in level.loop:
-		draw_circle(p, 33.0, BELT_EDGE)
-	draw_polyline(pts, BELT, 58.0, true)
+		draw_circle(p, belt_width / 2.0 + 4.0, col_belt_edge)
+	draw_polyline(pts, col_belt, belt_width, true)
 	for p in level.loop:
-		draw_circle(p, 29.0, BELT)
+		draw_circle(p, belt_width / 2.0, col_belt)
 	# Direction chevrons along the belt.
-	var spacing := 150.0
-	var count := maxi(1, int(level.loop_length / spacing))
+	var count := maxi(1, int(level.loop_length / arrow_spacing))
 	for i in count:
 		var d: float = (i + 0.5) * level.loop_length / count
 		var p: Vector2 = level.point_at(d)
@@ -407,10 +457,10 @@ func _draw_tray(shown, t: int) -> void:
 	var offset := Vector2.ZERO
 	if wobble.has(t):
 		var age: float = time_sec - wobble[t]
-		if age > WOBBLE_TIME:
+		if age > wobble_time:
 			wobble.erase(t)
 		else:
-			offset = level.tray_dir[t].orthogonal() * sin(age * 50.0) * 9.0 * (1.0 - age / WOBBLE_TIME)
+			offset = level.tray_dir[t].orthogonal() * sin(age * wobble_speed) * wobble_px * (1.0 - age / wobble_time)
 	rect.position += offset
 	var tray: Array = shown.trays[t]
 	var is_set: bool = shown.set_flags[t]
@@ -418,25 +468,25 @@ func _draw_tray(shown, t: int) -> void:
 	# The open end: a lip on the side that faces the loop.
 	var front: Vector2 = level.tray_front_point(t) + offset
 	var side: Vector2 = level.tray_dir[t].orthogonal() * (Level.CELL / 2.0)
-	draw_line(front - side, front + side, WOOD_DARK if not is_set else Color(1, 1, 1, 0.9), 6.0, true)
-	for i in 4:
+	draw_line(front - side, front + side, col_counter_edge if not is_set else Color(1, 1, 1, 0.9), 6.0, true)
+	for i in shown.capacity:
 		var c: Vector2 = level.cavity_center(t, i) + offset
-		var cav := Rect2(c - Vector2.ONE * (CUBE_SIZE / 2.0 + 2), Vector2.ONE * (CUBE_SIZE + 4))
-		draw_rect(cav, CAVITY.lerp(TRAY_FILL, 0.3) if is_set else CAVITY)
+		var cav := Rect2(c - Vector2.ONE * (cube_size / 2.0 + 2), Vector2.ONE * (cube_size + 4))
+		draw_rect(cav, col_cavity.lerp(col_tray, 0.3) if is_set else col_cavity)
 		if i < tray.size():
 			_draw_cube(c, tray[i], 1.0)
 
 
 func _draw_cube(center: Vector2, flavor: int, size_factor: float) -> void:
-	var s := CUBE_SIZE * size_factor
+	var s := cube_size * size_factor
 	var r := Rect2(center - Vector2(s, s) / 2.0, Vector2(s, s))
 	draw_style_box(cube_boxes[flavor], r)
 	draw_circle(r.position + Vector2(s * 0.3, s * 0.28), s * 0.12, Color(1, 1, 1, 0.65))
 
 
 func _draw_cup(center: Vector2) -> void:
-	draw_circle(center, 24.0, CUP)
-	draw_arc(center, 24.0, 0, TAU, 24, BELT_EDGE, 2.0, true)
+	draw_circle(center, 24.0, col_cup)
+	draw_arc(center, 24.0, 0, TAU, 24, col_belt_edge, 2.0, true)
 
 
 ## Cubes waiting on the loop between taps, stacked behind their stop.
@@ -445,26 +495,24 @@ func _draw_resting_cubes() -> void:
 	for r in board.riding:
 		var k: int = at_stop.get(r.y, 0)
 		at_stop[r.y] = k + 1
-		var p: Vector2 = level.ride_point(r.y, 0.0, k * CUP_SPACING)
+		var p: Vector2 = level.ride_point_at(r.y, 0.0, k * cube_gap)
 		_draw_cup(p)
-		_draw_cube(p, r.x, 0.68)
+		_draw_cube(p, r.x, riding_scale)
 
 
 func _draw_moving_cubes() -> void:
 	var trace: Dictionary = anim["trace"]
-	var step: float = anim["step"]
-	var n: int = trace["steps"]
-	var progress: float = anim["t"] / step
+	var travelled: float = anim["t"] * anim["speed"]
 	var at_stop := {}
 	for c in trace["cubes"]:
 		var k: int = at_stop.get(c["start"], 0)
 		at_stop[c["start"]] = k + 1
-		var limit: float = c["steps"] if c["land"] != -1 else n
-		if c["land"] != -1 and progress >= limit:
+		var limit: float = c["dist"]
+		if c["land"] != -1 and travelled >= limit:
 			continue  # already in its tray
-		var p: Vector2 = level.ride_point(c["start"], minf(progress, limit), k * CUP_SPACING)
+		var p: Vector2 = level.ride_point_at(c["start"], minf(travelled, limit), k * cube_gap)
 		_draw_cup(p)
-		_draw_cube(p, c["flavor"], 0.68)
+		_draw_cube(p, c["flavor"], riding_scale)
 
 
 ## A row of cups under the board: filled cups are riding cubes, empty cups are
@@ -475,14 +523,14 @@ func _draw_cup_row() -> void:
 		for r in board.riding:
 			riding_flavors.append(r.x)
 	else:
-		var progress: float = anim["t"] / anim["step"]
+		var travelled: float = anim["t"] * anim["speed"]
 		for c in anim["trace"]["cubes"]:
-			if c["land"] == -1 or progress < c["steps"]:
+			if c["land"] == -1 or travelled < c["dist"]:
 				riding_flavors.append(c["flavor"])
 	var n: int = level.cups
 	var spacing := 64.0
 	var x0 := SCREEN.x / 2.0 - (n - 1) * spacing / 2.0 + 60.0
-	_text("Free cups: %d" % (n - riding_flavors.size()), Vector2(x0 - 170.0, 1712), 28, INK)
+	_text("Free cups: %d" % (n - riding_flavors.size()), Vector2(x0 - 170.0, 1712), 28, col_ink)
 	for i in n:
 		var p := Vector2(x0 + i * spacing, 1702)
 		_draw_cup(p)
@@ -494,8 +542,8 @@ func _draw_banner() -> void:
 	var r := Rect2(Vector2(90, BOARD_ORIGIN.y + 420), Vector2(900, 230))
 	draw_style_box(banner_box, r)
 	if board.is_won():
-		_text("Order complete!", r.get_center() + Vector2(0, -20), 52, INK)
-		_text("Every tray has set. Tap Next for the next order.", r.get_center() + Vector2(0, 45), 28, INK_SOFT)
+		_text("Order complete!", r.get_center() + Vector2(0, -20), 52, col_ink)
+		_text("Every tray has set. Tap Next for the next order.", r.get_center() + Vector2(0, 45), 28, col_ink_soft)
 	else:
-		_text("Gumdrop scratches its head...", r.get_center() + Vector2(0, -20), 46, INK)
-		_text("This mix can't be finished. Undo or restart.", r.get_center() + Vector2(0, 45), 28, INK_SOFT)
+		_text("Gumdrop scratches its head...", r.get_center() + Vector2(0, -20), 46, col_ink)
+		_text("This mix can't be finished. Undo or restart.", r.get_center() + Vector2(0, 45), 28, col_ink_soft)

@@ -15,7 +15,18 @@ from collections import deque
 
 FLAVORS = ["cherry", "tangerine", "lemon", "lime", "raspberry", "grape", "blueberry"]
 
-CAP = 4
+import os
+
+def _tuning():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tuning.json")
+    try:
+        return json.load(open(path))
+    except FileNotFoundError:
+        return {}
+
+# Same source as the game: tuning.json at the project root.
+CAP = int(_tuning().get("rules", {}).get("tray_capacity", 4))
+DEFAULT_CUPS = int(_tuning().get("rules", {}).get("default_cups", 4))
 FACING = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
 CELL = 76.0
 TRAY_GAP = 6.0
@@ -57,7 +68,7 @@ def stop_order(level):
 
 class Board:
     def __init__(self, level):
-        self.cups = level["cups"]
+        self.cups = level.get("cups", DEFAULT_CUPS)
         self.order = stop_order(level)
         self.stop_of = [0] * len(self.order)
         for s, t in enumerate(self.order):

@@ -34,16 +34,36 @@ started**. On every later tap the whole loop runs one more lap, so waiting cubes
 get another chance to land. This keeps "the loop only moves when you tap" from
 the no-time-pressure pillar.
 
+## Tuning
+
+Global values live in [`tuning.json`](tuning.json) at the project root. Edit it,
+save, and press **T** in the running game to reload (this restarts the current
+level). Any key you leave out falls back to its default in
+`scripts/core/tuning.gd`, and each section has a `_notes` line explaining it.
+
+| Section | Values | What they change |
+| --- | --- | --- |
+| `rules` | `tray_capacity`, `default_cups` | Cavities per tray, and cups for levels that don't set their own. These change every puzzle, so re-check levels with `tools/sim.py` after editing. |
+| `loop` | `belt_speed_px_per_sec`, `min_lap_seconds`, `max_lap_seconds`, `settle_pause_seconds`, `queue_taps_during_animation`, `riding_cube_gap_px` | How fast cubes ride. The speed is constant along the belt, and lap time is clamped so tiny and huge loops both feel right. |
+| `feedback` | `wobble_seconds`, `wobble_px`, `wobble_speed` | The tray wobble when a tap can't send anything. |
+| `solver` | `enabled`, `max_boards`, `max_milliseconds` | The dead-end check and its budget. |
+| `look` | `cube_size_px`, `riding_cube_scale`, `belt_width_px`, `arrow_spacing_px`, `flavors`, `colors` | Sizes and the whole palette, so color tests need no code. |
+
+Per-level values (loop shape, direction, cups, trays) stay in the level files.
+Screen layout positions stay in code, since they move with the art.
+
 ## Project layout
 
 ```
 project.godot            Portrait 1080 × 1920, mobile renderer
+tuning.json              Global game values (speeds, solver budget, palette)
 scenes/game.tscn         The one screen
 scripts/game.gd          Drawing, input, animation, toolbar
 scripts/core/
   board_state.gd         The rules: trays, cups, tap and delivery
   level.gd               Level loading and loop geometry (tray order, direction)
   solver.gd              Dead-end check: depth-first search over all boards
+  tuning.gd              Loads tuning.json, with defaults for missing keys
 levels/*.json            Levels, loaded in file-name order
 tests/run_tests.gd       Headless tests
 tests/fixtures/          Move traces recorded by the Python model
