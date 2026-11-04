@@ -1,0 +1,20 @@
+{
+ "title": "Kitten in a basket",
+ "customer": "Dr. Hale, the vet",
+ "band": "normal",
+ "casual_win_pct": 82,
+ "direction": "cw",
+ "cups": 6,
+ "cake_cols": 4,
+ "loop": [[240, 40], [840, 40], [1040, 240], [1040, 840], [840, 1040], [240, 1040], [40, 840], [40, 240]],
+ "trays": [
+  {"pos": [540, 238], "facing": "up", "cubes": ["cola", "lime", "licorice", "licorice"]},
+  {"pos": [238, 340], "facing": "left", "cubes": ["peach", "cherry", "cherry", "cherry"]},
+  {"pos": [842, 340], "facing": "right", "cubes": ["soda", "lime", "cherry", "raspberry"]},
+  {"pos": [238, 540], "facing": "left", "cubes": ["peach", "cola", "lime", "licorice"]},
+  {"pos": [842, 540], "facing": "right", "cubes": ["cola", "raspberry", "peach", "soda"]},
+  {"pos": [238, 740], "facing": "left", "cubes": ["cola", "grape", "licorice", "raspberry"]},
+  {"pos": [842, 740], "facing": "right", "cubes": ["soda", "soda", "grape", "lime"]},
+  {"pos": [540, 842], "facing": "down", "cubes": ["grape", "grape", "raspberry", "peach"]}
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "title": "Lemonade stand",
+ "customer": "The twins next door",
+ "band": "normal",
+ "casual_win_pct": 76,
+ "direction": "ccw",
+ "cups": 6,
+ "cake_cols": 4,
+ "loop": [[40, 50], [1040, 50], [1040, 990], [40, 990]],
+ "trays": [
+  {"pos": [238, 190], "facing": "left", "cubes": ["lemon", "lime", "grape", "blueberry"]},
+  {"pos": [842, 190], "facing": "right", "cubes": ["grape", "cola", "cola", "raspberry"]},
+  {"pos": [238, 410], "facing": "left", "cubes": ["blueberry", "cola", "tangerine", "lime"]},
+  {"pos": [842, 410], "facing": "right", "cubes": ["cola", "blueberry", "tangerine", "lemon"]},
+  {"pos": [238, 630], "facing": "left", "cubes": ["cherry", "cherry", "tangerine", "tangerine"]},
+  {"pos": [842, 630], "facing": "right", "cubes": ["lemon", "cherry", "lime", "raspberry"]},
+  {"pos": [238, 850], "facing": "left", "cubes": ["blueberry", "raspberry", "lime", "grape"]},
+  {"pos": [842, 850], "facing": "right", "cubes": ["cherry", "lemon", "grape", "raspberry"]}
+ ]
+}

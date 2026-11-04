@@ -1,0 +1,20 @@
+{
+ "title": "Library mural",
+ "customer": "Mr. Okafor, the librarian",
+ "band": "hard",
+ "casual_win_pct": 44,
+ "direction": "ccw",
+ "cups": 5,
+ "cake_cols": 4,
+ "loop": [[240, 40], [840, 40], [1040, 240], [1040, 840], [840, 1040], [240, 1040], [40, 840], [40, 240]],
+ "trays": [
+  {"pos": [540, 238], "facing": "up", "cubes": ["cherry", "lime", "blueberry", "soda"]},
+  {"pos": [238, 340], "facing": "left", "cubes": ["lime", "blueberry", "grape", "raspberry"]},
+  {"pos": [842, 340], "facing": "right", "cubes": ["raspberry", "mint", "grape", "grape"]},
+  {"pos": [238, 540], "facing": "left", "cubes": ["raspberry", "lemon", "mint", "lemon"]},
+  {"pos": [842, 540], "facing": "right", "cubes": ["blueberry", "lime", "soda", "soda"]},
+  {"pos": [238, 740], "facing": "left", "cubes": ["raspberry", "mint", "cherry", "soda"]},
+  {"pos": [842, 740], "facing": "right", "cubes": ["lemon", "cherry", "mint", "blueberry"]},
+  {"pos": [540, 842], "facing": "down", "cubes": ["lemon", "lime", "cherry", "grape"]}
+ ]
+}

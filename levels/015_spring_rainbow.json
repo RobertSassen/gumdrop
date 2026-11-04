@@ -1,0 +1,19 @@
+{
+ "title": "Spring rainbow",
+ "customer": "The school choir",
+ "band": "normal",
+ "casual_win_pct": 80,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 4,
+ "loop": [[40, 160], [1040, 160], [1040, 1000], [40, 1000]],
+ "trays": [
+  {"pos": [540, 358], "facing": "up", "cubes": ["mint", "cherry", "mint", "tangerine"]},
+  {"pos": [238, 420], "facing": "left", "cubes": ["lemon", "mint", "blueberry", "cherry"]},
+  {"pos": [842, 420], "facing": "right", "cubes": ["tangerine", "lemon", "mint", "tangerine"]},
+  {"pos": [238, 640], "facing": "left", "cubes": ["cherry", "cherry", "grape", "grape"]},
+  {"pos": [842, 640], "facing": "right", "cubes": ["raspberry", "blueberry", "raspberry", "blueberry"]},
+  {"pos": [238, 860], "facing": "left", "cubes": ["lemon", "tangerine", "raspberry", "grape"]},
+  {"pos": [842, 860], "facing": "right", "cubes": ["lemon", "raspberry", "blueberry", "grape"]}
+ ]
+}

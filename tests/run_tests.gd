@@ -243,6 +243,7 @@ func test_levels_are_solvable() -> void:
 			for c in t:
 				flavors[c] = true
 		check(flavors.size() == lv.tray_count(), path + " has one flavor per tray")
+		check(lv.start_riding.is_empty(), path + " starts with an empty belt")
 		var solver = Solver.new()
 		solver.max_msec = 60000
 		solver.max_states = 1000000

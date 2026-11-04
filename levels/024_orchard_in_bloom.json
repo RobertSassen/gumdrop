@@ -1,0 +1,20 @@
+{
+ "title": "Orchard in bloom",
+ "customer": "Grandma Rosa",
+ "band": "normal",
+ "casual_win_pct": 82,
+ "direction": "ccw",
+ "cups": 6,
+ "cake_cols": 4,
+ "loop": [[40, 60], [1040, 60], [1040, 1020], [40, 1020]],
+ "trays": [
+  {"pos": [165, 258], "facing": "up", "cubes": ["tangerine", "tangerine", "lemon", "raspberry"]},
+  {"pos": [395, 258], "facing": "up", "cubes": ["blueberry", "blueberry", "peach", "cola"]},
+  {"pos": [625, 258], "facing": "up", "cubes": ["lime", "cola", "lemon", "mint"]},
+  {"pos": [855, 258], "facing": "up", "cubes": ["raspberry", "mint", "lemon", "mint"]},
+  {"pos": [165, 822], "facing": "down", "cubes": ["lime", "peach", "peach", "blueberry"]},
+  {"pos": [395, 822], "facing": "down", "cubes": ["lime", "tangerine", "peach", "mint"]},
+  {"pos": [625, 822], "facing": "down", "cubes": ["cola", "lemon", "lime", "cola"]},
+  {"pos": [855, 822], "facing": "down", "cubes": ["tangerine", "blueberry", "raspberry", "raspberry"]}
+ ]
+}

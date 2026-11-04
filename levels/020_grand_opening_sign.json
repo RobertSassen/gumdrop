@@ -1,0 +1,17 @@
+{
+ "title": "Grand opening sign",
+ "customer": "The mayor's office",
+ "band": "expert",
+ "casual_win_pct": 10,
+ "direction": "ccw",
+ "cups": 4,
+ "cake_cols": 3,
+ "loop": [[40, 160], [1040, 160], [1040, 1000], [40, 1000]],
+ "trays": [
+  {"pos": [540, 358], "facing": "up", "cubes": ["raspberry", "grape", "raspberry", "blueberry"]},
+  {"pos": [238, 520], "facing": "left", "cubes": ["cola", "soda", "cola", "blueberry"]},
+  {"pos": [842, 520], "facing": "right", "cubes": ["soda", "soda", "blueberry", "soda"]},
+  {"pos": [238, 800], "facing": "left", "cubes": ["cola", "grape", "raspberry", "raspberry"]},
+  {"pos": [842, 800], "facing": "right", "cubes": ["blueberry", "cola", "grape", "grape"]}
+ ]
+}

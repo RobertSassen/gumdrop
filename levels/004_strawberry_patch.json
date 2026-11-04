@@ -1,0 +1,20 @@
+{
+ "title": "Strawberry patch",
+ "customer": "Juniper, the mail carrier",
+ "band": "tutorial",
+ "lesson": "Graduation: six trays and five cups. Careless taps can fill every cup, so this is the first level where Undo matters (10 taps).",
+ "casual_win_pct": 100,
+ "random_win_pct": 29,
+ "direction": "cw",
+ "cups": 5,
+ "cake_cols": 3,
+ "loop": [[40, 160], [1040, 160], [1040, 1000], [40, 1000]],
+ "trays": [
+  {"pos": [238, 300], "facing": "left", "cubes": ["blueberry", "cherry", "cherry", "cherry"]},
+  {"pos": [842, 300], "facing": "right", "cubes": ["blueberry", "lemon", "lemon", "blueberry"]},
+  {"pos": [238, 580], "facing": "left", "cubes": ["blueberry", "grape", "grape", "grape"]},
+  {"pos": [842, 580], "facing": "right", "cubes": ["tangerine", "tangerine", "lime", "lemon"]},
+  {"pos": [238, 860], "facing": "left", "cubes": ["cherry", "lime", "lime", "lime"]},
+  {"pos": [842, 860], "facing": "right", "cubes": ["grape", "tangerine", "tangerine", "lemon"]}
+ ]
+}

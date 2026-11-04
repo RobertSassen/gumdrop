@@ -4,7 +4,7 @@ A line-for-line Python copy of scripts/core/board_state.gd and the loop
 geometry in scripts/core/level.gd. Use it to check and design levels without
 opening Godot:
 
-    python3 tools/sim.py levels/*.json          # solvable? how many taps?
+    python3 tools/sim.py levels/*.json          # solvable? how many taps? casual win rate?
     python3 tools/sim.py --fixtures levels/*.json > tests/fixtures/traces.json
 
 The fixtures are replayed by tests/run_tests.gd, so the two models can't drift
@@ -238,6 +238,65 @@ def solve(board, limit=2_000_000):
     return False, len(seen), 0
 
 
+def _patient_step(board, t):
+    nb = board.copy(); nb.tap(t); nb.advance(nb.L)
+    return nb
+
+
+def casual_game(board, rnd, cap=200):
+    """One game by the casual player, the difficulty yardstick for level design.
+
+    The casual player looks one tap ahead and plays patiently. It prefers a tap
+    that sets a tray, then one that leaves the fewest cubes riding, and avoids
+    boards it has already seen. It never taps a tray whose cubes would only ride
+    a lap and drop straight back in. Returns True if it wins.
+    """
+    b = board.copy()
+    seen = {b.key()}
+    for _ in range(cap):
+        if b.won():
+            return True
+        options = []
+        for t in range(len(b.trays)):
+            if not b.can_tap(t):
+                continue
+            nb = _patient_step(b, t)
+            if nb.key() == b.key():
+                continue
+            options.append((nb.key() in seen, -sum(nb.set), len(nb.riding), rnd.random(), t, nb))
+        if not options:
+            return False
+        b = min(options)[-1]
+        seen.add(b.key())
+    return False
+
+
+def casual_win_rate(board, games=40, seed=0):
+    """Share of games the casual player wins. Difficulty bands (see README):
+    tutorial 0.90 and up, normal 0.60 to 0.90, hard 0.25 to 0.60, expert under 0.25."""
+    rnd = random.Random(seed)
+    return sum(casual_game(board, rnd) for _ in range(games)) / games
+
+
+def random_win_rate(board, games=200, seed=0, cap=150):
+    """Share of games won by a random tapper: someone who taps any tray that can
+    send, then waits for the belt to come round. It's the forgiveness check for
+    tutorials, where a new player still taps around to see what happens."""
+    rnd = random.Random(seed)
+    wins = 0
+    for _ in range(games):
+        b = board.copy()
+        for _ in range(cap):
+            if b.won() or b.stuck():
+                break
+            moves = [t for t in range(len(b.trays)) if b.can_tap(t)]
+            if not moves:
+                break
+            b = _patient_step(b, rnd.choice(moves))
+        wins += b.won()
+    return wins / games
+
+
 def fixtures(paths, walks=3, length=60):
     """Random legal move sequences per level, with the board key after each move."""
     out = []
@@ -266,4 +325,6 @@ if __name__ == "__main__":
         lv = json.load(open(path))
         b = Board(lv)
         t0 = time.time(); ok, n, taps = solve(b, 3_000_000); t1 = time.time()
-        print(f"{path}: order={b.order} solvable={ok} boards={n} ({(t1-t0)*1000:.0f} ms) taps_in_found_solution={taps}")
+        cw = casual_win_rate(b, 200)
+        print(f"{path}: order={b.order} solvable={ok} boards={n} ({(t1-t0)*1000:.0f} ms) "
+              f"taps_in_found_solution={taps} casual_win={cw:.0%}")

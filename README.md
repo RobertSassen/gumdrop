@@ -26,7 +26,8 @@ toolbar for Undo, Restart and switching levels.
 | Trays set, panes fill in the window cake, win screen | Gumdrop, the shop, sound, real art |
 | Unlimited undo and restart | Real pictures in the cake (each pane takes its tray's flavor for now) |
 | 12 flavors, one per tray in every level | Level select, progress saving |
-| Game stops only when every cup is full and no cube can land | |
+| Game stops only when every cup is full and no cube can land | Twists (hidden cubes from level 41) |
+| 30 levels on the difficulty schedule: tutorial, normal, hard and expert | |
 
 ### How the belt works
 
@@ -76,7 +77,8 @@ scripts/core/
 levels/*.json            Levels, loaded in file-name order
 tests/run_tests.gd       Headless tests
 tests/fixtures/          Move traces recorded by the Python model
-tools/sim.py             Python copy of the rules, for checking levels
+tools/sim.py             Python copy of the rules, for checking and scoring levels
+tools/build_levels.py    The level plan; builds levels/ to hit each level's difficulty band
 tools/gen_level.py       Searches shuffles for solvable levels
 tools/screenshot.gd      Saves a screenshot, optionally after some taps
 ```
@@ -85,10 +87,12 @@ tools/screenshot.gd      Saves a screenshot, optionally after some taps
 
 ```json
 {
- "title": "Plum sunset",
- "customer": "Theo from the bike shop",
+ "title": "Duck pond",
+ "customer": "The twins next door",
+ "band": "normal",
+ "casual_win_pct": 77,
  "direction": "ccw",
- "cups": 3,
+ "cups": 5,
  "cake_cols": 3,
  "loop": [[40, 160], [1040, 160], [1040, 1000], [40, 1000]],
  "trays": [
@@ -104,11 +108,72 @@ tools/screenshot.gd      Saves a screenshot, optionally after some taps
   than four.
 - Flavors: cherry, tangerine, lemon, lime, mint, soda, blueberry, grape,
   raspberry, cola, licorice, peach. Colors are in `tuning.json`.
-- Optional `"riding": [{"flavor": "lime", "tray": 2}]` starts cubes in cups at a
-  tray's stop.
+- Levels always start with an empty belt, so every tray starts with four
+  cubes. (The loader still reads an optional `"riding"` list of cubes that start
+  in cups, but no level may use it, and the tests check that.)
+- `band`, `lesson`, `casual_win_pct` and `random_win_pct` are notes for
+  designers: the level's difficulty band, what a tutorial teaches, and how often
+  the casual player and a random tapper won it when it was built. The game
+  ignores them.
+- Files are named `001_title.json`, `002_…`, and load in that order.
 
 The order in which cubes pass the trays comes from projecting each tray's open
 end onto the loop, so moving a tray along the loop changes the puzzle.
+
+## Level plan and difficulty
+
+Levels follow a difficulty schedule, measured with a **casual player**: a
+simulated player in `tools/sim.py` that looks one tap ahead, prefers taps that
+set a tray, then taps that leave the fewest cubes riding. Its win rate puts each
+level in a band:
+
+| Band | Casual player wins | Where it goes |
+| --- | --- | --- |
+| Tutorial | 90% or more | Levels 1 to 4, then about once every 40 levels as a breather |
+| Normal | 60 to 90% | Every other level (the baseline) |
+| Hard | 25 to 60% | From level 12, every 5th level (12, 17, 22…) |
+| Expert | under 25% | From level 20, every 10th level |
+
+Cups are the main dial and stay between 4 and 7: normal levels need about 5
+cups at 6 trays, 6 at 9 to 10 trays and 7 at 11 to 12 trays, and one cup fewer
+makes them hard. Never use 4 cups above 8 trays. Within a setup, a flavor that
+sits on no tray's bottom row makes a level harder.
+
+`tools/build_levels.py` holds the plan for every level (band, layout, cups,
+direction, title, customer) and searches shuffles until the casual player's win
+rate lands in the band, near its target:
+
+```
+python3 tools/build_levels.py          # rebuild every level
+python3 tools/build_levels.py 12 17    # rebuild only levels 12 and 17
+```
+
+New flavors unlock a few at a time (6 at first, 8 from level 5, 10 from level 13,
+all 12 from level 21), most distinct first, so look-alike pairs such as cherry
+and raspberry arrive once the player knows the board.
+
+### Tutorials
+
+Levels 1 to 4 aren't shuffled. Each is a hand-picked board that teaches one
+idea, kept in `TUTORIALS` in `tools/build_levels.py`:
+
+| Level | Lesson | Taps | Random tapper wins |
+| --- | --- | --- | --- |
+| 1 | Tap and land: the first cube waits, then every tap sets a tray | 3 | 100% |
+| 2 | Front runs: one tap sends the matching cubes together | 4 | 86% |
+| 3 | Counterclockwise: the belt runs the other way | 8 | 63% |
+| 4 | Graduation: six trays, five cups, the first level where Undo matters | 10 | 29% |
+
+Taps are the fewest a level needs. Because the belt starts empty and every tray
+starts full, the first cube a player sends can never land straight away: it
+rides until a later tap opens a spot. Level 1 makes that the whole lesson, and
+from its second tap on, every tap sets a tray.
+
+The casual player looks ahead, so it wins every tutorial. Tutorials get a second
+check: a **random tapper**, who taps any tray and waits for the belt, stands in
+for a new player trying things out. It has to win at least 95% of level 1, down
+to 25% of level 4. Flavors arrive one or two at a time: cherry, lemon and
+blueberry in level 1, lime in 2, grape in 3 and tangerine in 4.
 
 ## Tests
 
@@ -117,14 +182,13 @@ godot --headless --path . -s res://tests/run_tests.gd
 ```
 
 The tests cover the belt and delivery rules, setting, getting stuck, clockwise
-and counterclockwise ordering, and check that every level is solvable and uses
-one flavor per tray. They also
-replay random games recorded by `tools/sim.py` and fail if Godot and the Python
+and counterclockwise ordering. They check that every level is solvable, uses
+one flavor per tray and starts with an empty belt. They also replay random games recorded by `tools/sim.py` and fail if Godot and the Python
 model ever disagree. After changing a rule in one, change the other and refresh
 the fixtures:
 
 ```
-python3 tools/sim.py levels/*.json                         # solvable?
+python3 tools/sim.py levels/*.json                         # solvable? casual win rate?
 python3 tools/sim.py --fixtures levels/*.json > tests/fixtures/traces.json
 ```
 
@@ -143,11 +207,11 @@ big. So there are two searches, each wrong only on the safe side:
 
 - **Level check (patient player):** after every tap, let the belt run a full
   lap. Any solution it finds can really be played, so a level it passes is
-  solvable. All four levels pass in about a second or less.
+  solvable. Every level passes; the biggest check needs about 400 boards.
 - **Dead-end readout (relaxed player):** riding cubes may land in any tray that
   accepts them, whenever the player likes. When even that can't finish, the
   board is truly hopeless. It may notice some dead ends a few moves late.
 
-Speed on this machine, in Godot: level checks take up to 1.1 s (about 7,000
-boards), and the dead-end readout takes 100 to 300 ms on the 6 to 10-tray
-levels. GDScript runs these searches about 2 to 3 times slower than Python.
+Speed on this machine, in Godot: level checks take up to 0.3 s (about 400
+boards), and the dead-end readout takes under 30 ms at the start of every level.
+GDScript runs these searches about 2 to 3 times slower than Python.
