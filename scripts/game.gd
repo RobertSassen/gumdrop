@@ -10,7 +10,9 @@ const Tuning = preload("res://scripts/core/tuning.gd")
 const LEVEL_DIR := "res://levels/"
 const SCREEN := Vector2(1080, 1920)
 const BOARD_ORIGIN := Vector2(0, 590)
-const CAKE_RECT := Rect2(150, 150, 780, 400)
+const CAKE_RECT := Rect2(150, 140, 780, 370)
+## Vertical center of the cup tally, between the window cake and the board.
+const TALLY_Y := 550.0
 
 ## Values from tuning.json, refreshed by _apply_tuning().
 var flavor_colors: Array = []
@@ -348,9 +350,9 @@ func _draw() -> void:
 	_draw_riding_cubes()
 	draw_set_transform(Vector2.ZERO)
 
-	_draw_cup_row()
-	_text(status_text, Vector2(SCREEN.x / 2, 1752), 32, col_ink)
-	_text(solver_text, Vector2(SCREEN.x / 2, 1785), 22, col_ink_soft)
+	_draw_cup_tally()
+	_text(status_text, Vector2(SCREEN.x / 2, 1730), 32, col_ink)
+	_text(solver_text, Vector2(SCREEN.x / 2, 1770), 22, col_ink_soft)
 	if dead_end or board.is_won():
 		_draw_banner()
 
@@ -470,18 +472,22 @@ func _draw_riding_cubes() -> void:
 		_draw_cube(p, r.x, riding_scale)
 
 
-## A row of cups under the board: filled cups are riding cubes, empty cups are
-## the room the player has left.
-func _draw_cup_row() -> void:
+## The cup tally: how many free cups are left, shown as a row of cups
+## between the window cake and the board. Filled cups hold riding cubes.
+func _draw_cup_tally() -> void:
 	var riding_flavors := []
 	for r in board.riding:
 		riding_flavors.append(r.x)
 	var n: int = level.cups
 	var spacing := 64.0
-	var x0 := SCREEN.x / 2.0 - (n - 1) * spacing / 2.0 + 60.0
-	_text("Free cups: %d" % (n - riding_flavors.size()), Vector2(x0 - 170.0, 1712), 28, col_ink)
+	var label := "Free cups: %d" % (n - riding_flavors.size())
+	var label_w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 28).x
+	var total := label_w + 24.0 + (n - 1) * spacing + 48.0
+	var x := SCREEN.x / 2.0 - total / 2.0
+	draw_string(font, Vector2(x, TALLY_Y + 10.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, col_ink)
+	var x0 := x + label_w + 24.0 + 24.0
 	for i in n:
-		var p := Vector2(x0 + i * spacing, 1702)
+		var p := Vector2(x0 + i * spacing, TALLY_Y)
 		_draw_cup(p)
 		if i < riding_flavors.size():
 			_draw_cube(p, riding_flavors[i], 0.6)
