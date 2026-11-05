@@ -154,13 +154,13 @@ export function tray(facing) {
 }
 
 // White ceramic cup seen from above.
-const CUP_K = 1.2;
+const CUP_K = 1.65;
 const cupGeo = () => new THREE.LatheGeometry([[0, 0], [0.27, 0], [0.31, 0.03], [0.37, 0.34], [0.4, 0.38], [0.38, 0.41], [0.33, 0.4], [0.29, 0.1], [0, 0.1]]
   .map(([x, y]) => new THREE.Vector2(x * CUP_K, y * CUP_K)), 48);
 export function cup() {
   const sc = baseScene(2);
   add(sc, cupGeo(), gloss('#ffffff', { roughness: 0.18, clearcoat: 1 }), 0, 0, 0);
-  return shoot(sc, 140, 140);
+  return shoot(sc, 180, 180);
 }
 
 // Jelly filling a cup to the brim with a soft dome, in the same three layers
@@ -172,7 +172,7 @@ export function cupFill() {
   const out = layers((sc, m) => {
     add(sc, cupGeo(), new THREE.MeshBasicMaterial({ colorWrite: false }), 0, 0, 0);
     add(sc, new THREE.LatheGeometry(pts, 48), m, 0, 0, 0);
-  }, 140, 140, 2, false);
+  }, 180, 180, 2, false);
   return out;
 }
 

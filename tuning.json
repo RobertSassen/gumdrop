@@ -10,7 +10,7 @@
  "loop": {
   "_notes": "The belt never stops while cubes ride it. Speed is along the belt in screen pixels per second (the screen is 1080 wide; the loops are 2500 to 3900 px around). The gap spaces out cubes that left a tray together.",
   "belt_speed_px_per_sec": 900,
-  "riding_cube_gap_px": 100
+  "riding_cube_gap_px": 120
  },
 
  "feedback": {

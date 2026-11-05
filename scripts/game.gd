@@ -16,6 +16,8 @@ const LEVEL_DIR := "res://levels/"
 const SCREEN := Vector2(1080, 2340)
 ## The board is centered on this point, whatever the level's loop shape.
 const BOARD_CENTER_Y := 1360.0
+## Least table showing between the belt's outer rail and the screen edge.
+const BOARD_MARGIN := 48.0
 ## Art pieces are rendered with this much transparent padding around them.
 const ART_PAD := 60.0
 
@@ -56,6 +58,7 @@ var level  # Level
 var board  # BoardState: the live board; the belt moves it every frame
 var history: Array = []  # BoardState snapshots for undo, taken before each tap
 var board_origin := Vector2(0, 820)
+var board_scale := 1.0  # wide loops are drawn smaller so the table shows around them
 
 ## Fraction of a pixel the belt has moved but the rules haven't seen yet.
 var belt_carry := 0.0
@@ -181,7 +184,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if board.is_won():
 		_on_next()
 		return
-	var bp := p - board_origin
+	var bp := (p - board_origin) / board_scale
 	for t in level.tray_count():
 		if level.tray_rect(t).grow(12).has_point(bp):
 			_on_tray_tapped(t)
@@ -500,7 +503,7 @@ func _draw() -> void:
 		_text(status_text, Vector2(SCREEN.x / 2, 1200), 40, Color.WHITE, 4, col_ink)
 		return
 	_layout_board()
-	draw_set_transform(board_origin)
+	draw_set_transform(board_origin, 0.0, Vector2.ONE * board_scale)
 	_draw_belt()
 	for t in level.tray_count():
 		_draw_tray(t)
@@ -519,14 +522,17 @@ func _draw() -> void:
 		_draw_menu()
 
 
-## Centers the level's loop in the board area.
+## Centers the level's loop in the board area, scaled down if its belt would
+## reach the screen edges.
 func _layout_board() -> void:
 	var lo := Vector2(INF, INF)
 	var hi := Vector2(-INF, -INF)
 	for p in level.loop:
 		lo = lo.min(p)
 		hi = hi.max(p)
-	board_origin = Vector2(SCREEN.x / 2.0 - (lo.x + hi.x) / 2.0, BOARD_CENTER_Y - (lo.y + hi.y) / 2.0).round()
+	var outer := hi - lo + Vector2.ONE * (belt_width + rail_width * 2.0)
+	board_scale = minf(1.0, (SCREEN.x - BOARD_MARGIN * 2.0) / outer.x)
+	board_origin = (Vector2(SCREEN.x / 2.0, BOARD_CENTER_Y) - (lo + hi) / 2.0 * board_scale).round()
 
 
 ## Text centered on a point, with an optional outline and a drop below it.

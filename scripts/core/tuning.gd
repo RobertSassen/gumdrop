@@ -17,7 +17,7 @@ const DEFAULTS := {
 	},
 	"loop": {
 		"belt_speed_px_per_sec": 900.0,
-		"riding_cube_gap_px": 100.0,
+		"riding_cube_gap_px": 120.0,
 	},
 	"feedback": {
 		"wobble_seconds": 0.35,
