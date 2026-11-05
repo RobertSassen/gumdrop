@@ -36,7 +36,7 @@
   .green { background: linear-gradient(#8ee04a, #3fae22); box-shadow: inset 0 -5px 0 #2f8a17, 0 5px 0 #23660f, 0 9px 14px rgba(40,20,6,.4); border: 3px solid #f9d36a; }
   .orange { background: linear-gradient(#ffc04a, #ff8a1f); box-shadow: inset 0 -5px 0 #d8650a, 0 5px 0 #a74b06, 0 9px 14px rgba(40,20,6,.4); border: 3px solid #fff1c7; }
   .blue { background: linear-gradient(#7fd2ff, #2f8ff0); box-shadow: inset 0 -5px 0 #1f6ac2, 0 5px 0 #154f94, 0 9px 14px rgba(40,20,6,.4); border: 3px solid #fff1c7; }
-  .badge { position: absolute; right: -12px; top: -12px; width: 32px; height: 32px; box-sizing: border-box; border-radius: 50%; background: linear-gradient(#77d83c, #36a01c); border: 3px solid #fff; box-shadow: 0 3px 4px rgba(0,0,0,.3); color: #fff; font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  .badge { position: absolute; left: -12px; top: -12px; width: 32px; height: 32px; box-sizing: border-box; border-radius: 50%; background: linear-gradient(#77d83c, #36a01c); border: 3px solid #fff; box-shadow: 0 3px 4px rgba(0,0,0,.3); color: #fff; font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; }
 </style>
 </head>
 <body>
@@ -94,7 +94,8 @@
 <div class="piece pad" id="pane_body"><div class="pane body"></div></div>
 <div class="piece pad" id="pane_gloss"><div class="pane gloss"></div></div>
 <div class="piece pad" id="btn_spare"><div class="btn blue">
-  <svg width="46" height="36" viewBox="0 0 46 36"><path d="M4 10 h38 l-4 20 a4 4 0 0 1 -4 3 h-22 a4 4 0 0 1 -4 -3z" fill="#fff"/><path d="M10 10 v20 M16 10 v22 M22 10 v22 M28 10 v22 M34 10 v20" stroke="#cfe4f5" stroke-width="2"/><ellipse cx="23" cy="10" rx="19" ry="4" fill="#e9f3fb"/></svg>
+  <svg width="56" height="42" viewBox="0 0 56 42" style="margin-left: 6px"><g transform="translate(0 3)"><path d="M4 10 h38 l-4 20 a4 4 0 0 1 -4 3 h-22 a4 4 0 0 1 -4 -3z" fill="#fff"/><path d="M10 10 v20 M16 10 v22 M22 10 v22 M28 10 v22 M34 10 v20" stroke="#cfe4f5" stroke-width="2"/><ellipse cx="23" cy="10" rx="19" ry="4" fill="#e9f3fb"/></g>
+    <path d="M42 18 v16 M34 26 h16" stroke="#1f6ac2" stroke-width="10" stroke-linecap="round"/><path d="M42 18 v16 M34 26 h16" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>
   <div class="badge">1</div></div></div>
 <div class="piece pad" id="btn_undo"><div class="btn green">
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 2px 0 #23660f)"><path d="M9 5 4 10l5 5"/><path d="M4 10h10a6 6 0 0 1 0 12h-3"/></svg></div></div>

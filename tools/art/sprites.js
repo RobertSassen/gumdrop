@@ -31,7 +31,7 @@ const gummy = (hex, o = {}) => new THREE.MeshPhysicalMaterial({
   color: hex, roughness: 0.25, clearcoat: 0.7, clearcoatRoughness: 0.08, emissive: hex, emissiveIntensity: 0.1, ...o,
 });
 
-function baseScene(shadowExtent = 6) {
+function baseScene(shadowExtent = 6, shadowOpacity = 0.15) {
   const scene = new THREE.Scene();
   scene.environment = envTex;
   scene.environmentIntensity = 0.4;
@@ -43,8 +43,9 @@ function baseScene(shadowExtent = 6) {
   Object.assign(key.shadow.camera, { left: -shadowExtent, right: shadowExtent, top: shadowExtent, bottom: -shadowExtent, near: 1, far: 60 });
   key.shadow.radius = 9; key.shadow.blurSamples = 16; key.shadow.bias = -0.0005;
   scene.add(key);
-  // invisible ground that only shows the soft shadow
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.28 }));
+  // invisible ground that only shows the soft, warm shadow (kept light: the
+  // game stacks sprite shadows, which a single 3D scene would not)
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ color: '#4a2508', opacity: shadowOpacity }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
   scene.add(ground);
   return scene;
@@ -74,7 +75,7 @@ function shoot(scene, wpx, hpx) {
 function layers(build, wpx, hpx, extent) {
   const out = {};
   for (const pass of ['shadow', 'body', 'gloss']) {
-    const sc = baseScene(extent);
+    const sc = baseScene(extent, 0.12);
     const ground = sc.children.find(o => o.material && o.material.isShadowMaterial);
     let m;
     if (pass === 'shadow') m = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
@@ -106,7 +107,7 @@ export function slab(vertical) {
 export function cubeColor(hex) {
   const sc = baseScene(2);
   add(sc, new RoundedBoxGeometry(u(CUBE), u(CUBE) * 0.87, u(CUBE), 5, u(CUBE) * 0.22), gummy(hex), 0, u(CUBE) * 0.435, 0);
-  return shoot(sc, 104, 104);
+  return shoot(sc, 140, 140);
 }
 
 // Mint silicone tray. facing is the side of the open end: right, left, up, down.

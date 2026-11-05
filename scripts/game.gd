@@ -29,10 +29,9 @@ const RIBBON_CENTER := Vector2(540, 160)
 const CUSTOMER_Y := 242.0
 const PILL_TOP := 636.0
 const PILL_HEIGHT := 80.0
-const BUTTON_Y := 2060.0
+const BUTTON_Y := 2100.0
 const BUTTON_SIZE := 148.0
 const BUTTON_XS := [272.0, 466.0, 660.0]
-const LABEL_Y := 2256.0
 
 ## Values from tuning.json, refreshed by _apply_tuning().
 var flavor_colors: Array = []
@@ -396,11 +395,11 @@ func _tint(l: Array, c: Color, glow: float) -> Image:
 			var s := shadow.get_pixel(x, y)
 			var b := body.get_pixel(x, y)
 			var g := gloss.get_pixel(x, y)
-			# The body is rendered softly lit; a square curve brings back the
-			# darker sides of the mockup. The gloss loses its faint overall
-			# haze so only real highlights brighten the color.
-			var shade := Color(b.r * b.r, b.g * b.g, b.b * b.b)
-			var col := Color(shade.r * c.r, shade.g * c.g, shade.b * c.b).lerp(Color.WHITE, glow)
+			# The body is rendered softly lit, so its shading already matches a
+			# full-color render; a steeper curve would darken the rims. The
+			# gloss loses its faint overall haze so only real highlights
+			# brighten the color.
+			var col := Color(b.r * c.r, b.g * c.g, b.b * c.b).lerp(Color.WHITE, glow)
 			var gl := clampf((g.r - 0.22) / 0.78, 0.0, 1.0) * g.a * gk
 			col = Color(minf(col.r + gl, 1.0), minf(col.g + gl, 1.0), minf(col.b + gl, 1.0))
 			# body over shadow
@@ -554,7 +553,7 @@ func _draw_belt() -> void:
 		var sh := path.duplicate()
 		for i in sh.size():
 			sh[i] += Vector2(4 + k * 2, 12 + k * 3)
-		draw_polyline(sh, Color(0.24, 0.12, 0.04, 0.07), full + 6.0 + k * 8.0, true)
+		draw_polyline(sh, Color(0.24, 0.12, 0.04, 0.045), full + 6.0 + k * 8.0, true)
 	draw_polyline(path, col_rail.darkened(0.22), full + 4.0, true)
 	draw_polyline(path, col_rail, full - 2.0, true)
 	# the belt is a little darker where it meets the rails
@@ -704,11 +703,8 @@ func _button_rect(i: int) -> Rect2:
 
 func _draw_buttons() -> void:
 	var names := ["btn_spare", "btn_undo", "btn_restart"]
-	var labels := ["Spare", "Undo", "Restart"]
 	for i in 3:
-		var mod := Color.WHITE
-		draw_texture(tex[names[i]], Vector2(BUTTON_XS[i], BUTTON_Y) - Vector2.ONE * ART_PAD, mod)
-		_text(labels[i], Vector2(BUTTON_XS[i] + 74.0, LABEL_Y), 38, Color(1, 1, 1, mod.a), 4, Color("6b3510", mod.a), font, 2.0)
+		draw_texture(tex[names[i]], Vector2(BUTTON_XS[i], BUTTON_Y) - Vector2.ONE * ART_PAD)
 
 
 func _draw_readouts() -> void:
