@@ -63,7 +63,7 @@ level). Any key you leave out falls back to its default in
 | `loop` | `belt_speed_px_per_sec`, `riding_cube_gap_px` | How fast the belt runs, and how far apart cubes that left a tray together are drawn. |
 | `feedback` | `wobble_seconds`, `wobble_px`, `wobble_speed` | The tray wobble when a tap can't send anything. |
 | `solver` | `show_readout`, `max_boards`, `max_milliseconds` | The testing readout under the board and its budget. |
-| `look` | `cube_size_px`, `riding_cube_scale`, `jelly_gloss`, `belt_width_px`, `rail_width_px`, `belt_corner_radius_px`, `arrow_spacing_px`, `flavors`, `colors` | Sizes, the belt's shape and the whole palette. Jelly art is white and is tinted with `flavors` at startup, so color tests need no new art. |
+| `look` | `cube_size_px`, `jelly_gloss`, `belt_width_px`, `rail_width_px`, `belt_corner_radius_px`, `arrow_spacing_px`, `flavors`, `colors` | Sizes, the belt's shape and the whole palette. Jelly art is white and is tinted with `flavors` at startup, so color tests need no new art. |
 
 Per-level values (loop shape, direction, cups, trays) stay in the level files.
 Screen layout positions stay in code, since they move with the art.

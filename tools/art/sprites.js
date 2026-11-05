@@ -64,7 +64,30 @@ function shoot(scene, wpx, hpx) {
   cam.position.set(0, Math.cos(TILT) * 30, Math.sin(TILT) * 30);
   cam.lookAt(0, 0, 0);
   renderer.render(scene, cam);
-  return canvas.toDataURL('image/png');
+  return defringe(wpx, hpx);
+}
+// Antialiased edge pixels come out of WebGL much darker than the surface they
+// belong to, which reads as a thin black outline in the game. Give each
+// partly transparent pixel the color of its opaque neighbors, keeping its alpha.
+function defringe(w, h) {
+  const c2 = document.createElement('canvas'); c2.width = w; c2.height = h;
+  const g = c2.getContext('2d');
+  g.drawImage(canvas, 0, 0);
+  const img = g.getImageData(0, 0, w, h), d = img.data, src = d.slice();
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4;
+    if (src[i + 3] === 0 || src[i + 3] === 255) continue;
+    let r = 0, gg = 0, b = 0, n = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+      const j = (yy * w + xx) * 4;
+      if (src[j + 3] === 255) { r += src[j]; gg += src[j + 1]; b += src[j + 2]; n++; }
+    }
+    if (n) { d[i] = r / n; d[i + 1] = gg / n; d[i + 2] = b / n; }
+  }
+  g.putImageData(img, 0, 0);
+  return c2.toDataURL('image/png');
 }
 
 // --- sprites ---------------------------------------------------------------
@@ -72,14 +95,14 @@ function shoot(scene, wpx, hpx) {
 // Jelly is drawn in three layers so its flavor color stays editable in
 // tuning.json: a soft shadow, a white body the game tints with the flavor
 // color, and a gloss layer the game adds on top untinted.
-function layers(build, wpx, hpx, extent) {
+function layers(build, wpx, hpx, extent, withShadow = true) {
   const out = {};
   for (const pass of ['shadow', 'body', 'gloss']) {
     const sc = baseScene(extent, 0.12);
     const ground = sc.children.find(o => o.material && o.material.isShadowMaterial);
     let m;
     if (pass === 'shadow') m = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
-    else ground.visible = false;
+    if (pass !== 'shadow' || !withShadow) ground.visible = false;
     if (pass === 'body') {
       // dimmer light so the top face sits just under white and the sides keep their shading
       sc.traverse(o => { if (o.isLight) o.intensity *= 0.42; });
@@ -131,12 +154,26 @@ export function tray(facing) {
 }
 
 // White ceramic cup seen from above.
+const CUP_K = 1.2;
+const cupGeo = () => new THREE.LatheGeometry([[0, 0], [0.27, 0], [0.31, 0.03], [0.37, 0.34], [0.4, 0.38], [0.38, 0.41], [0.33, 0.4], [0.29, 0.1], [0, 0.1]]
+  .map(([x, y]) => new THREE.Vector2(x * CUP_K, y * CUP_K)), 48);
 export function cup() {
   const sc = baseScene(2);
-  const k = 1.2;
-  const pts = [[0, 0], [0.27, 0], [0.31, 0.03], [0.37, 0.34], [0.4, 0.38], [0.38, 0.41], [0.33, 0.4], [0.29, 0.1], [0, 0.1]].map(([x, y]) => new THREE.Vector2(x * k, y * k));
-  add(sc, new THREE.LatheGeometry(pts, 48), gloss('#ffffff', { roughness: 0.18, clearcoat: 1 }), 0, 0, 0);
+  add(sc, cupGeo(), gloss('#ffffff', { roughness: 0.18, clearcoat: 1 }), 0, 0, 0);
   return shoot(sc, 140, 140);
+}
+
+// Jelly filling a cup to the brim with a soft dome, in the same three layers
+// as a cube. The cup is there only to hide and shade the jelly; the game draws
+// this over cup.png, which already has the shadow, so the shadow layer is empty.
+export function cupFill() {
+  const pts = [[0, 0.105], [0.285, 0.105], [0.3, 0.2], [0.316, 0.3], [0.326, 0.36], [0.322, 0.39], [0.3, 0.41], [0.25, 0.425], [0.15, 0.434], [0, 0.437]]
+    .map(([x, y]) => new THREE.Vector2(x * CUP_K, y * CUP_K));
+  const out = layers((sc, m) => {
+    add(sc, cupGeo(), new THREE.MeshBasicMaterial({ colorWrite: false }), 0, 0, 0);
+    add(sc, new THREE.LatheGeometry(pts, 48), m, 0, 0, 0);
+  }, 140, 140, 2, false);
+  return out;
 }
 
 // --- the oak table ---------------------------------------------------------
@@ -201,5 +238,5 @@ export function table() {
   return canvas.toDataURL('image/png');
 }
 
-window.sprites = { cube, cubeColor, slab, tray, cup, table };
+window.sprites = { cube, cubeColor, slab, tray, cup, cupFill, table };
 window.__ready = true;

@@ -39,7 +39,7 @@ const save = (name, dataUrl) => {
   await sp.goto(base + '/sprites.html');
   await sp.waitForFunction(() => window.__ready === true);
   const call = (fn, ...a) => sp.evaluate(([fn, a]) => window.sprites[fn](...a), [fn, a]);
-  for (const [name, layers] of [['cube', await call('cube')], ['slab_h', await call('slab', false)], ['slab_v', await call('slab', true)]])
+  for (const [name, layers] of [['cube', await call('cube')], ['slab_h', await call('slab', false)], ['slab_v', await call('slab', true)], ['cupfill', await call('cupFill')]])
     for (const k of ['shadow', 'body', 'gloss']) save(`${name}_${k}.png`, layers[k]);
   for (const f of ['right', 'left', 'up', 'down']) save(`tray_${f}.png`, await call('tray', f));
   save('cup.png', await call('cup'));

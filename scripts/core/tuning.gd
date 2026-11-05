@@ -31,7 +31,6 @@ const DEFAULTS := {
 	},
 	"look": {
 		"cube_size_px": 70.0,
-		"riding_cube_scale": 0.86,
 		"jelly_gloss": 0.8,
 		"belt_width_px": 64.0,
 		"rail_width_px": 18.0,

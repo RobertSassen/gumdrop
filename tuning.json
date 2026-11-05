@@ -30,7 +30,6 @@
  "look": {
   "_notes": "Sizes in screen pixels (the screen is 1080 x 2340); colors as hex. Cube size must stay under 76 (the tray cavity). Jelly sprites are white and take their color from flavors, so palette changes need no new art. jelly_gloss scales the shine on jelly.",
   "cube_size_px": 70,
-  "riding_cube_scale": 0.86,
   "jelly_gloss": 0.8,
   "belt_width_px": 64,
   "rail_width_px": 18,

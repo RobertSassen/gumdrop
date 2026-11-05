@@ -41,7 +41,6 @@ var col_arrow: Color
 var col_ink: Color
 var col_ink_soft: Color
 var cube_size := 70.0
-var riding_scale := 0.86
 var cube_gap := 50.0
 var belt_width := 64.0
 var rail_width := 12.0
@@ -84,6 +83,7 @@ var font: Font
 var font_semibold: Font
 var tex := {}
 var cube_tex: Array = []  # per flavor, tinted
+var cup_fill_tex: Array = []  # per flavor: jelly filling a cup, drawn over the cup
 var slab_tex_h: Array = []
 var slab_tex_v: Array = []
 var pane_empty_box: StyleBoxTexture
@@ -350,7 +350,6 @@ func _apply_tuning() -> void:
 	col_ink = Tuning.color("ink")
 	col_ink_soft = Tuning.color("ink_soft")
 	cube_size = minf(Tuning.num("look", "cube_size_px"), Level.CELL - 4.0)
-	riding_scale = Tuning.num("look", "riding_cube_scale")
 	cube_gap = Tuning.num("loop", "riding_cube_gap_px")
 	belt_width = Tuning.num("look", "belt_width_px")
 	rail_width = Tuning.num("look", "rail_width_px")
@@ -368,10 +367,11 @@ func _apply_tuning() -> void:
 ## multiplied by the color, then the gloss added on top.
 func _make_jelly_art() -> void:
 	cube_tex = []
+	cup_fill_tex = []
 	slab_tex_h = []
 	slab_tex_v = []
 	var layers := {}
-	for n in ["cube", "slab_h", "slab_v"]:
+	for n in ["cube", "slab_h", "slab_v", "cupfill"]:
 		layers[n] = []
 		for k in ["shadow", "body", "gloss"]:
 			var img: Image = load("res://art/%s_%s.png" % [n, k]).get_image()
@@ -379,6 +379,7 @@ func _make_jelly_art() -> void:
 			layers[n].append(img)
 	for c in flavor_colors:
 		cube_tex.append(ImageTexture.create_from_image(_tint(layers["cube"], c, 0.0)))
+		cup_fill_tex.append(ImageTexture.create_from_image(_tint(layers["cupfill"], c, 0.0)))
 		# A set slab glows a little brighter than loose cubes.
 		slab_tex_h.append(ImageTexture.create_from_image(_tint(layers["slab_h"], c, 0.18)))
 		slab_tex_v.append(ImageTexture.create_from_image(_tint(layers["slab_v"], c, 0.18)))
@@ -626,7 +627,7 @@ func _draw_sparkles(center: Vector2, vertical: bool) -> void:
 		draw_texture_rect(st, Rect2(center + o - full / 2.0, full), false)
 
 
-## Cubes riding the belt, each in a cup. Cubes that left a tray together share
+## Jelly riding the belt, filling a cup. Cubes that left a tray together share
 ## a position in the rules, so they're drawn one behind the other.
 func _draw_riding_cubes() -> void:
 	var at_pos := {}
@@ -636,8 +637,9 @@ func _draw_riding_cubes() -> void:
 		var k: int = at_pos.get(r.y, 0)
 		at_pos[r.y] = k + 1
 		var p := _belt_draw_point(r.y + carry - k * cube_gap)
-		draw_texture(cup, (p - cup.get_size() / 2.0).round())
-		_draw_cube(p + Vector2(0, -8), r.x, riding_scale)
+		var at := (p - cup.get_size() / 2.0).round()
+		draw_texture(cup, at)
+		draw_texture(cup_fill_tex[r.x], at)
 
 
 ## The window cake: a card with the order's name on a ribbon and one pane per
