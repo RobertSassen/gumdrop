@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Flat UI pieces of the approved look. render.js screenshots each #piece at 2x,
+     so 1 CSS px here is 2 px in the 1080 x 2340 game screen. -->
+<style>
+  @font-face { font-family: Fredoka; font-weight: 700; src: url(./node_modules/@fontsource/fredoka/files/fredoka-latin-700-normal.woff2) format('woff2'); }
+  html, body { margin: 0; background: transparent; font-family: Fredoka, sans-serif; }
+  .piece { position: relative; display: inline-block; vertical-align: top; }
+  .pad { padding: 30px; }
+  /* full-screen pieces */
+  #background { width: 540px; height: 1170px; position: relative; overflow: hidden; }
+  #background img { position: absolute; inset: 0; width: 540px; height: 1170px; }
+  .vign { position: absolute; inset: 0; background: radial-gradient(75% 52% at 50% 50%, rgba(255,240,215,.18) 0%, rgba(255,240,215,0) 55%, rgba(60,30,10,.32) 85%, rgba(40,20,6,.55) 100%); }
+  #decor { width: 540px; height: 1170px; }
+  /* card with ribbon (title text is drawn by the game) */
+  .card { position: relative; width: 350px; height: 222px; border-radius: 26px; background: linear-gradient(#fffdf7, #f6ead3); box-shadow: 0 5px 0 #d8bf98, 0 12px 22px rgba(60,30,10,.35); }
+  .ribbon { position: absolute; left: 50%; top: -24px; transform: translateX(-50%); width: 300px; height: 50px; }
+  .ribbon .mid { position: absolute; left: 22px; right: 22px; top: 0; height: 44px; border-radius: 12px; background: linear-gradient(#ff7d97, #ef4f72); box-shadow: inset 0 3px 0 rgba(255,255,255,.45), 0 4px 0 #b8304f; }
+  .ribbon .tail { position: absolute; top: 12px; width: 40px; height: 36px; background: #d93e62; }
+  .ribbon .tail.l { left: 0; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 30% 50%); }
+  .ribbon .tail.r { right: 0; clip-path: polygon(0 0, 100% 0, 70% 50%, 100% 100%, 0 100%); }
+  .grid { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); width: 294px; height: 160px; box-sizing: border-box; border-radius: 18px; background: rgba(233,215,186,.6); box-shadow: inset 0 2px 4px rgba(120,80,40,.25); }
+  /* pill, used as a 9-slice by the game */
+  .pill { width: 120px; height: 40px; border-radius: 20px; background: linear-gradient(#fffaf0, #f3e6cf); box-shadow: 0 3px 0 #d2b994, 0 6px 12px rgba(60,30,10,.3); display: flex; align-items: center; justify-content: center; }
+  .pause { width: 52px; height: 52px; border-radius: 26px; }
+  /* panes */
+  .pane { width: 86px; height: 66px; box-sizing: border-box; border-radius: 12px; }
+  .pane.empty { background: rgba(255,255,255,.55); border: 2.5px dashed rgba(190,160,120,.7); }
+  .pane.body { background: linear-gradient(160deg, #ffffff, #f4f4f4 55%, #e2e2e2); box-shadow: inset 0 -5px 0 rgba(0,0,0,.13), 0 3px 6px rgba(0,0,0,.2); }
+  .pane.gloss { background: radial-gradient(60% 50% at 30% 25%, rgba(255,255,255,.9), rgba(255,255,255,0) 60%); }
+  /* big buttons */
+  .btn { position: relative; width: 74px; height: 74px; border-radius: 22px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+  .btn::before { content: ''; position: absolute; left: 8px; right: 8px; top: 6px; height: 26px; border-radius: 14px 14px 18px 18px; background: linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,0)); }
+  .green { background: linear-gradient(#8ee04a, #3fae22); box-shadow: inset 0 -5px 0 #2f8a17, 0 5px 0 #23660f, 0 9px 14px rgba(40,20,6,.4); border: 3px solid #f9d36a; }
+  .orange { background: linear-gradient(#ffc04a, #ff8a1f); box-shadow: inset 0 -5px 0 #d8650a, 0 5px 0 #a74b06, 0 9px 14px rgba(40,20,6,.4); border: 3px solid #fff1c7; }
+  .blue { background: linear-gradient(#7fd2ff, #2f8ff0); box-shadow: inset 0 -5px 0 #1f6ac2, 0 5px 0 #154f94, 0 9px 14px rgba(40,20,6,.4); border: 3px solid #fff1c7; }
+  .badge { position: absolute; right: -12px; top: -12px; width: 32px; height: 32px; box-sizing: border-box; border-radius: 50%; background: linear-gradient(#77d83c, #36a01c); border: 3px solid #fff; box-shadow: 0 3px 4px rgba(0,0,0,.3); color: #fff; font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<div class="piece" id="background"><img id="tableimg" alt=""><div class="vign"></div></div>
+
+<div class="piece" id="decor">
+<svg width="540" height="1170" viewBox="0 0 540 1170">
+  <defs>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fd38a"/><stop offset="1" stop-color="#1f8a5b"/></linearGradient>
+    <linearGradient id="leaf2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4fbf8f"/><stop offset="1" stop-color="#16705a"/></linearGradient>
+    <radialGradient id="berry" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ff8a9a"/><stop offset=".5" stop-color="#ee3550"/><stop offset="1" stop-color="#b3122e"/></radialGradient>
+    <radialGradient id="rind" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff07a"/><stop offset="1" stop-color="#f7b500"/></radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.4"/><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#3a1c06" flood-opacity=".4"/></filter>
+    <g id="mint">
+      <path d="M0 0 C 30 -40, 90 -55, 130 -40 C 100 -5, 50 20, 0 0 Z" fill="url(#leaf)"/>
+      <path d="M4 -2 C 45 -22, 85 -32, 124 -39" stroke="#c8f5d2" stroke-width="3" fill="none" opacity=".7"/>
+      <path d="M40 -16 l 14 -16 M70 -26 l 14 -12 M50 -12 l 18 8 M82 -22 l 16 6" stroke="#c8f5d2" stroke-width="2" opacity=".45"/>
+    </g>
+    <g id="mint2">
+      <path d="M0 0 C 30 -40, 90 -55, 130 -40 C 100 -5, 50 20, 0 0 Z" fill="url(#leaf2)"/>
+      <path d="M4 -2 C 45 -22, 85 -32, 124 -39" stroke="#b8efd2" stroke-width="3" fill="none" opacity=".6"/>
+    </g>
+    <g id="strawberry">
+      <path d="M0 -36 C 30 -40, 42 -10, 30 14 C 20 34, 6 44, 0 46 C -6 44, -20 34, -30 14 C -42 -10, -30 -40, 0 -36 Z" fill="url(#berry)"/>
+      <g fill="#ffe7a8" opacity=".9"><ellipse cx="-12" cy="-12" rx="2" ry="3"/><ellipse cx="10" cy="-14" rx="2" ry="3"/><ellipse cx="0" cy="2" rx="2" ry="3"/><ellipse cx="-16" cy="12" rx="2" ry="3"/><ellipse cx="15" cy="10" rx="2" ry="3"/><ellipse cx="-4" cy="24" rx="2" ry="3"/><ellipse cx="8" cy="28" rx="2" ry="3"/></g>
+      <path d="M0 -36 l -22 -10 l 14 -2 l -6 -14 l 14 10 l 0 -14 l 8 14 l 12 -10 l -4 14 l 18 2 Z" fill="#3fae4a"/>
+      <ellipse cx="-12" cy="-22" rx="7" ry="4" fill="#fff" opacity=".45"/>
+    </g>
+    <g id="lemon">
+      <circle r="50" fill="url(#rind)"/>
+      <circle r="42" fill="#fffbe0"/>
+      <circle r="38" fill="#ffe873"/>
+      <g stroke="#fffbe0" stroke-width="4"><line x1="0" y1="-38" x2="0" y2="38"/><line x1="-33" y1="-19" x2="33" y2="19"/><line x1="-33" y1="19" x2="33" y2="-19"/></g>
+      <circle r="6" fill="#fffbe0"/>
+      <ellipse cx="-18" cy="-24" rx="10" ry="5" fill="#fff" opacity=".5" transform="rotate(-30 -18 -24)"/>
+    </g>
+  </defs>
+  <g filter="url(#soft)">
+    <use href="#mint2" transform="translate(-30 150) rotate(-30) scale(1.2)"/>
+    <use href="#mint" transform="translate(-20 190) rotate(5) scale(1.05)"/>
+    <use href="#strawberry" transform="translate(40 120) rotate(-20) scale(.9)"/>
+    <use href="#lemon" transform="translate(520 150) scale(1.05)"/>
+    <use href="#mint" transform="translate(570 230) rotate(200) scale(1.1)"/>
+    <use href="#mint2" transform="translate(560 90) rotate(160) scale(.95)"/>
+    <use href="#strawberry" transform="translate(530 960) rotate(25) scale(.85)"/>
+    <use href="#mint2" transform="translate(575 1010) rotate(190) scale(1.2)"/>
+  </g>
+</svg>
+</div>
+
+<div class="piece pad" id="card"><div class="card"><div class="ribbon"><div class="tail l"></div><div class="tail r"></div><div class="mid"></div></div><div class="grid"></div></div></div>
+<div class="piece pad" id="pill"><div class="pill"></div></div>
+<div class="piece pad" id="pause"><div class="pill pause"><svg width="29" height="29" viewBox="0 0 24 24" fill="#a06a3f"><rect x="5" y="4" width="4" height="16" rx="2"/><rect x="15" y="4" width="4" height="16" rx="2"/></svg></div></div>
+<div class="piece pad" id="pane_empty"><div class="pane empty"></div></div>
+<div class="piece pad" id="pane_body"><div class="pane body"></div></div>
+<div class="piece pad" id="pane_gloss"><div class="pane gloss"></div></div>
+<div class="piece pad" id="btn_spare"><div class="btn blue">
+  <svg width="46" height="36" viewBox="0 0 46 36"><path d="M4 10 h38 l-4 20 a4 4 0 0 1 -4 3 h-22 a4 4 0 0 1 -4 -3z" fill="#fff"/><path d="M10 10 v20 M16 10 v22 M22 10 v22 M28 10 v22 M34 10 v20" stroke="#cfe4f5" stroke-width="2"/><ellipse cx="23" cy="10" rx="19" ry="4" fill="#e9f3fb"/></svg>
+  <div class="badge">1</div></div></div>
+<div class="piece pad" id="btn_undo"><div class="btn green">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 2px 0 #23660f)"><path d="M9 5 4 10l5 5"/><path d="M4 10h10a6 6 0 0 1 0 12h-3"/></svg></div></div>
+<div class="piece pad" id="btn_restart"><div class="btn orange">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" style="filter: drop-shadow(0 2px 0 #a74b06)"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 3.5v5.5h-5.5"/></svg></div></div>
+<div class="piece pad" id="sparkle"><svg width="30" height="30" viewBox="-10 -10 20 20" style="overflow:visible"><path d="M0 -10 C 1 -2, 2 -1, 10 0 C 2 1, 1 2, 0 10 C -1 2, -2 1, -10 0 C -2 -1, -1 -2, 0 -10 Z" fill="#fff" style="filter: drop-shadow(0 0 4px rgba(255,240,170,.9))"/></svg></div>
+</body>
+</html>

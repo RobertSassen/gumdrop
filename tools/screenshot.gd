@@ -1,9 +1,11 @@
 extends SceneTree
 ## Saves a screenshot of the game for checking layout without a phone.
 ##
-##   xvfb-run godot --path . --rendering-driver opengl3 -s res://tools/screenshot.gd -- out.png [level] [taps...]
+##   xvfb-run -s "-screen 0 1200x2400x24" godot --path . --rendering-driver opengl3 -s res://tools/screenshot.gd -- out.png [level] [taps...]
 ##
-## Taps are tray indices, played one per half second so the belt can move.
+## The level is counted from 0. Taps are tray indices, played one per half
+## second so the belt can move. The window is resized to the full 1080 x 2340
+## screen first, so the picture can be compared with the mockup pixel for pixel.
 
 var frames := 0
 var game: Node
@@ -16,6 +18,7 @@ func _initialize() -> void:
 	args = OS.get_cmdline_user_args()
 	game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	DisplayServer.window_set_size(Vector2i(1080, 2340))
 	if args.size() > 1:
 		game.call_deferred("_load_level", int(args[1]))
 	for i in range(2, args.size()):

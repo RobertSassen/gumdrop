@@ -10,7 +10,7 @@
  "loop": {
   "_notes": "The belt never stops while cubes ride it. Speed is along the belt in screen pixels per second (the screen is 1080 wide; the loops are 2500 to 3900 px around). The gap spaces out cubes that left a tray together.",
   "belt_speed_px_per_sec": 900,
-  "riding_cube_gap_px": 50
+  "riding_cube_gap_px": 100
  },
 
  "feedback": {
@@ -28,36 +28,34 @@
  },
 
  "look": {
-  "_notes": "Sizes in screen pixels; colors as hex. Cube size must stay under 76 (the tray cavity).",
-  "cube_size_px": 62,
-  "riding_cube_scale": 0.68,
-  "belt_width_px": 58,
-  "arrow_spacing_px": 150,
+  "_notes": "Sizes in screen pixels (the screen is 1080 x 2340); colors as hex. Cube size must stay under 76 (the tray cavity). Jelly sprites are white and take their color from flavors, so palette changes need no new art. jelly_gloss scales the shine on jelly.",
+  "cube_size_px": 70,
+  "riding_cube_scale": 0.86,
+  "jelly_gloss": 0.8,
+  "belt_width_px": 64,
+  "rail_width_px": 18,
+  "belt_corner_radius_px": 150,
+  "arrow_spacing_px": 240,
   "flavors": {
-   "cherry": "#e2445c",
-   "tangerine": "#f28c38",
-   "lemon": "#f2c53d",
-   "lime": "#86c046",
-   "mint": "#2fb59a",
-   "soda": "#5cc6ee",
-   "blueberry": "#3f6fd9",
-   "grape": "#8e5bc2",
-   "raspberry": "#e8619f",
-   "cola": "#8a5a3c",
-   "licorice": "#3a3348",
-   "peach": "#f7a98b"
+   "cherry": "#ef3b55",
+   "tangerine": "#ff8a1f",
+   "lemon": "#ffd02b",
+   "lime": "#7cc93a",
+   "mint": "#22c2a0",
+   "soda": "#3cc3f2",
+   "blueberry": "#3d6df0",
+   "grape": "#9152d6",
+   "raspberry": "#f2589d",
+   "cola": "#8a4f2c",
+   "licorice": "#3b3150",
+   "peach": "#ffa47e"
   },
   "colors": {
-   "background": "#f6ebdd",
-   "counter": "#d9b48a",
-   "counter_edge": "#8a6240",
-   "belt": "#c9c2ba",
-   "belt_edge": "#9d958c",
-   "tray": "#fffaf3",
-   "cavity": "#efe3d3",
-   "cup": "#ffffff",
-   "ink": "#4a3426",
-   "ink_soft": "#8c7462"
+   "belt": "#f7eedc",
+   "rail": "#fa9b87",
+   "arrow": "#ffb04a",
+   "ink": "#8a4f22",
+   "ink_soft": "#a06a3f"
   }
  }
 }
