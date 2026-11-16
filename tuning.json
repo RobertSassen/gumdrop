@@ -8,7 +8,7 @@
  },
 
  "loop": {
-  "_notes": "The belt never stops while cubes ride it. Speed is along the belt in screen pixels per second (the screen is 1080 wide; the loops are 2500 to 3900 px around). The gap spaces out cubes that left a tray together.",
+  "_notes": "The belt never stops while cubes ride it. Speed is along the belt in screen pixels per second (the screen is 1080 wide; the loops are 2500 to 3900 px around). The gap spaces out cubes that left a tray together; with flowing jelly, keep goo.clump_length_px at or under it.",
   "belt_speed_px_per_sec": 900,
   "riding_cube_gap_px": 120
  },
@@ -18,6 +18,20 @@
   "wobble_seconds": 0.35,
   "wobble_px": 9,
   "wobble_speed": 50
+ },
+
+ "goo": {
+  "_notes": "The flowing jelly on the belt. The rules still place every cube; this is only how it looks and moves. enabled false rides jelly in cups instead. Each cube is gobs_per_cube soft gobs that rest gob_spacing_px apart, each drawn as a blob of blob_radius_px that melts into its neighbors, and a clump stays within clump_length_px of belt. cling is how hard a flavor holds together, slosh how far it swings out on bends, jostle how restless it is (0 is still). Battery: fewer gobs, and lower field_scale and render_scale (the goo is drawn small, then smoothed up to screen size), all cost less.",
+  "enabled": true,
+  "gobs_per_cube": 7,
+  "gob_spacing_px": 24,
+  "blob_radius_px": 36,
+  "clump_length_px": 120,
+  "cling": 1.0,
+  "slosh": 0.6,
+  "jostle": 1.0,
+  "field_scale": 0.25,
+  "render_scale": 0.75
  },
 
  "solver": {

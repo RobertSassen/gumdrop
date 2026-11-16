@@ -8,6 +8,8 @@ config_version=5
 config/name="Gumdrop's Jelly Kitchen"
 config/description="Proof of concept for the setting-tray loop puzzle."
 run/main_scene="res://scenes/game.tscn"
+run/max_fps=60
+run/low_processor_mode=true
 config/features=PackedStringArray("4.7", "Mobile")
 
 [display]

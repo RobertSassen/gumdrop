@@ -7,10 +7,17 @@ extends Node2D
 ## buttons are pictures in art/, made by tools/art/render.js. Jelly sprites are
 ## white and get their flavor color from tuning.json when the game starts, so
 ## the palette stays editable without re-rendering art.
+##
+## Jelly on the belt flows as goo (scripts/goo/). The rules still place every
+## cube; the goo layer only makes it look and move like jelly. Set goo.enabled
+## to false in tuning.json to ride in cups instead.
+##
+## To spare the battery the screen is only redrawn while something moves.
 
 const Level = preload("res://scripts/core/level.gd")
 const Solver = preload("res://scripts/core/solver.gd")
 const Tuning = preload("res://scripts/core/tuning.gd")
+const GooLayer = preload("res://scripts/goo/goo_layer.gd")
 
 const LEVEL_DIR := "res://levels/"
 const SCREEN := Vector2(1080, 2340)
@@ -76,6 +83,14 @@ var solver_text := ""
 ## Solver runs in flight on worker threads: [{task, solver, board, result, stale}]
 var solver_jobs: Array = []
 
+## The flowing jelly on the belt, and whether it's in use (tuning: goo.enabled).
+var goo: Node
+var goo_on := true
+## Sparkles on set trays twinkle slowly, so they redraw at this pace when
+## nothing else moves.
+const IDLE_REDRAW_SECONDS := 0.1
+var idle_clock := 0.0
+
 ## The drawn belt: the level's loop with rounded corners. Rules still use the
 ## sharp loop; _belt_draw_point() moves points onto the rounded corners.
 var belt_path := PackedVector2Array()
@@ -104,6 +119,8 @@ func _ready() -> void:
 			"btn_spare", "btn_undo", "btn_restart", "sparkle", "cup",
 			"tray_right", "tray_left", "tray_up", "tray_down"]:
 		tex[n] = load("res://art/%s.png" % n)
+	goo = GooLayer.new()
+	add_child(goo)
 	Tuning.reload()
 	_apply_tuning()
 	level_files = _find_levels()
@@ -146,6 +163,7 @@ func _load_level(i: int) -> void:
 	jiggle.clear()
 	paused = false
 	_build_belt_path()
+	_reset_goo()
 	_evaluate()
 
 
@@ -153,6 +171,7 @@ func _load_level(i: int) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		queue_redraw()
 		match event.keycode:
 			KEY_T:
 				Tuning.reload()
@@ -169,6 +188,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var p: Vector2 = (make_input_local(event) as InputEventMouseButton).position
 	get_viewport().set_input_as_handled()
+	queue_redraw()
 	if paused:
 		_menu_click(p)
 		return
@@ -196,9 +216,14 @@ func _on_tray_tapped(t: int) -> void:
 		return
 	if not board.can_tap(t):
 		wobble[t] = time_sec
+		queue_redraw()
 		return
 	history.append(board.copy())
-	board.tap(t)
+	var flavor: int = board.front(t)
+	var held: int = board.trays[t].size()
+	var left: int = board.tap(t)
+	if goo_on:
+		_pour_goo(t, flavor, held, left)
 	_evaluate()
 
 
@@ -211,6 +236,7 @@ func _on_undo() -> void:
 		return
 	board = history.pop_back()
 	belt_carry = 0.0
+	_reset_goo()
 	_evaluate()
 
 
@@ -229,6 +255,7 @@ func _on_next() -> void:
 func _toast(s: String) -> void:
 	toast_text = s
 	toast_until = time_sec + 2.5
+	queue_redraw()
 
 
 # --- Pause menu --------------------------------------------------------------
@@ -264,10 +291,35 @@ func _menu_click(p: Vector2) -> void:
 
 func _process(delta: float) -> void:
 	time_sec += delta
-	if board != null and not dead_end and not paused and not board.riding.is_empty():
+	var running: bool = board != null and not dead_end and not paused and not board.riding.is_empty()
+	if running:
 		_run_belt(delta)
+	var flowing := false
+	if goo_on and board != null and not paused:
+		flowing = goo.advance(delta, running, _riding_positions())
 	_poll_solvers()
-	queue_redraw()
+	# Redraw only while something on screen changes; an idle board costs nothing.
+	if running or flowing or not wobble.is_empty() or not jiggle.is_empty():
+		queue_redraw()
+		return
+	idle_clock += delta
+	if idle_clock >= IDLE_REDRAW_SECONDS:
+		idle_clock = 0.0
+		if _has_slow_motion():
+			queue_redraw()
+
+
+## True while something that only changes slowly is on screen: a twinkling set
+## tray, or a toast waiting to fade.
+func _has_slow_motion() -> bool:
+	if toast_text != "" and time_sec < toast_until + IDLE_REDRAW_SECONDS * 2.0:
+		return true
+	if board == null or paused:
+		return false
+	for f in board.set_flags:
+		if f:
+			return true
+	return false
 
 
 ## Moves the belt at a steady speed. The rules work in whole pixels, so the
@@ -278,9 +330,12 @@ func _run_belt(delta: float) -> void:
 	belt_carry -= px
 	if px <= 0:
 		return
+	var before: Array = board.riding.duplicate() if goo_on else []
 	var landed: Array = board.advance(px)
 	if landed.is_empty():
 		return
+	if goo_on:
+		_land_goo(before, px, landed)
 	for l in landed:
 		jiggle[l.y] = time_sec
 	# The board changed, so check again for a win or a dead end.
@@ -289,6 +344,7 @@ func _run_belt(delta: float) -> void:
 
 ## Decides what the board means now: won, stuck, or ask the solver.
 func _evaluate() -> void:
+	queue_redraw()
 	_cancel_solvers()
 	dead_end = false
 	status_text = ""
@@ -298,7 +354,7 @@ func _evaluate() -> void:
 		return
 	if board.is_stuck():
 		dead_end = true
-		status_text = "Every cup is full and no cube can land."
+		status_text = "The belt is full and no jelly can land."
 		solver_text = ""
 		return
 	if not Tuning.flag("solver", "show_readout"):
@@ -329,6 +385,7 @@ func _poll_solvers() -> void:
 		solver_jobs.erase(job)
 		if job["stale"]:
 			continue
+		queue_redraw()
 		var r: Dictionary = job["result"]
 		var ms: float = r["usec"] / 1000.0
 		solver_text = "Solver: %s in %.1f ms, %d boards checked" % [Solver.result_name(r["result"]), ms, r["states"]]
@@ -362,6 +419,8 @@ func _apply_tuning() -> void:
 	wobble_px = Tuning.num("feedback", "wobble_px")
 	wobble_speed = Tuning.num("feedback", "wobble_speed")
 	belt_speed = maxf(Tuning.num("loop", "belt_speed_px_per_sec"), 1.0)
+	goo_on = Tuning.flag("goo", "enabled")
+	goo.apply_tuning(flavor_colors, belt_speed, belt_width)
 	_make_jelly_art()
 	_make_styles()
 
@@ -495,6 +554,77 @@ func _belt_draw_point(pos: float) -> Vector2:
 	return _round_point(-pos if level.direction == "ccw" else pos)
 
 
+# --- Flowing jelly -----------------------------------------------------------
+
+## How far behind its rule position each riding cube's jelly sits: cubes that
+## left a tray together share a position, so each one trails the one before.
+func _riding_offsets() -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	var at_pos := {}
+	for r in board.riding:
+		var k: int = at_pos.get(r.y, 0)
+		at_pos[r.y] = k + 1
+		out.append(k * cube_gap)
+	return out
+
+
+func _riding_positions() -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	var carry := 0.0 if dead_end else belt_carry
+	for r in board.riding:
+		out.append(r.y + carry)
+	return out
+
+
+## Starts the goo afresh from the board: level start, undo, new tuning.
+func _reset_goo() -> void:
+	if level == null or belt_path.is_empty():
+		return
+	var points := PackedVector2Array()
+	var steps := belt_path.size()
+	for k in steps:
+		points.append(_belt_draw_point(level.loop_length * k / steps))
+	goo.set_belt(points, board.belt_length, level.cups)
+	if not goo_on:
+		return
+	var flavors := PackedInt32Array()
+	for r in board.riding:
+		flavors.append(r.x)
+	goo.sim.reset(flavors, _riding_positions(), _riding_offsets())
+	goo.refresh()
+
+
+## A tap sent `left` cubes of tray t onto the belt: pour them out as goo.
+func _pour_goo(t: int, flavor: int, held: int, left: int) -> void:
+	if left <= 0:
+		return
+	var slots := PackedInt32Array()
+	for i in left:
+		slots.append(held - 1 - i)
+	var offsets := _riding_offsets().slice(board.riding.size() - left)
+	var stop: float = board.stop_pos[board.stop_of[t]]
+	goo.sim.pour(t, flavor, slots, offsets, level.tray_front_point(t), level.tray_dir[t], stop)
+
+
+## The belt moved px pixels and the rules landed some cubes: send their goo home.
+func _land_goo(before: Array, px: int, landed: Array) -> void:
+	var total := {}
+	for l in landed:
+		total[l.y] = total.get(l.y, 0) + 1
+	var seen := {}
+	var targets := []
+	for l in landed:
+		var t: int = l.y
+		var slot: int = board.trays[t].size() - total[t] + seen.get(t, 0)
+		seen[t] = seen.get(t, 0) + 1
+		targets.append({
+			"flavor": l.x, "tray": t, "slot": slot,
+			"front": level.tray_front_point(t), "cavity": level.cavity_center(t, slot),
+			"stop": float(board.stop_pos[board.stop_of[t]]),
+		})
+	goo.sim.cubes_landed(before, board.riding, px, board.belt_length, targets)
+
+
 # --- Drawing ---------------------------------------------------------------
 
 func _draw() -> void:
@@ -507,7 +637,12 @@ func _draw() -> void:
 	_draw_belt()
 	for t in level.tray_count():
 		_draw_tray(t)
-	_draw_riding_cubes()
+	if goo_on:
+		var jelly: Texture2D = goo.picture()
+		if jelly != null:
+			draw_texture_rect(jelly, goo.rect, false)
+	else:
+		_draw_riding_cubes()
 	draw_set_transform(Vector2.ZERO)
 	draw_texture(tex["decor"], Vector2.ZERO)
 
@@ -595,7 +730,9 @@ func _draw_tray(t: int) -> void:
 	var tt: Texture2D = tex["tray_" + facing]
 	draw_texture(tt, (center - tt.get_size() / 2.0).round())
 	var tray: Array = board.trays[t]
-	if board.set_flags[t]:
+	# Cubes whose jelly is still flowing in (slot -> how much has arrived) or out.
+	var arriving: Dictionary = goo.sim.tray_fill(t) if goo_on else {}
+	if board.set_flags[t] and arriving.is_empty():
 		var slab: Texture2D = (slab_tex_v if dir.x == 0.0 else slab_tex_h)[tray[0]]
 		draw_texture(slab, (center - slab.get_size() / 2.0).round())
 		_draw_sparkles(center, dir.x == 0.0)
@@ -609,7 +746,14 @@ func _draw_tray(t: int) -> void:
 				jiggle.erase(t)
 			else:
 				k = 1.0 + 0.12 * sin(age * 30.0) * (1.0 - age / 0.3)
+		if arriving.has(i):
+			if arriving[i] <= 0.0:
+				continue
+			k *= sqrt(arriving[i])
 		_draw_cube(c, tray[i], k)
+	if goo_on:
+		for l in goo.sim.tray_leaving(t):
+			_draw_cube(level.cavity_center(t, l[0]) + offset, l[1], sqrt(l[2]))
 
 
 func _draw_cube(center: Vector2, flavor: int, size_factor: float) -> void:
@@ -672,9 +816,13 @@ func _draw_cake() -> void:
 			draw_style_box(pane_empty_box, r)
 
 
-## The free cups: a pill with one cup icon per cup. Free cups are white,
-## cups that hold a riding cube are faded.
+## The room left on the belt: a pill with one mark per cube the belt can hold.
+## With flowing jelly it's a gauge that fills with the flavors riding the belt;
+## with cups, free cups are white and cups that hold a cube are faded.
 func _draw_cup_pill() -> void:
+	if goo_on:
+		_draw_space_gauge()
+		return
 	var label := "Free cups"
 	var lsize := 34
 	var lw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, lsize).x
@@ -705,6 +853,43 @@ func _draw_cup_pill() -> void:
 		x += icon_w + gap
 
 
+func _draw_space_gauge() -> void:
+	var label := "Belt space"
+	var lsize := 34
+	var lw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, lsize).x
+	var n: int = level.cups
+	var seg_w := 46.0
+	var bar := Rect2(0, 0, n * seg_w, 30.0)
+	var w := lw + 22.0 + bar.size.x + 64.0
+	var r := Rect2(SCREEN.x / 2.0 - w / 2.0, PILL_TOP, w, PILL_HEIGHT)
+	draw_style_box(pill_box, r)
+	var cy := r.position.y + r.size.y / 2.0
+	_text(label, Vector2(r.position.x + 32.0 + lw / 2.0, cy), lsize, Color("8a4f22"))
+	bar.position = Vector2(r.position.x + 32.0 + lw + 22.0, cy - bar.size.y / 2.0)
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color("e6d5b8")
+	track.set_corner_radius_all(15)
+	track.anti_aliasing = true
+	draw_style_box(track, bar)
+	# One stretch per riding cube, in its flavor, filling from the left.
+	var used: int = board.riding.size()
+	for i in used:
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = flavor_colors[board.riding[i].x]
+		fill.corner_radius_top_left = 15 if i == 0 else 0
+		fill.corner_radius_bottom_left = 15 if i == 0 else 0
+		fill.corner_radius_top_right = 15 if i == used - 1 else 0
+		fill.corner_radius_bottom_right = 15 if i == used - 1 else 0
+		fill.anti_aliasing = true
+		draw_style_box(fill, Rect2(bar.position + Vector2(i * seg_w, 0), Vector2(seg_w, bar.size.y)))
+	if used > 0:
+		draw_rect(Rect2(bar.position + Vector2(10, 4), Vector2(used * seg_w - 20, 5)), Color(1, 1, 1, 0.35))
+	# Faint ticks so the room left can be counted.
+	for i in range(1, n):
+		var x := bar.position.x + i * seg_w
+		draw_line(Vector2(x, bar.position.y + 6), Vector2(x, bar.end.y - 6), Color(0.54, 0.31, 0.13, 0.25), 2.0)
+
+
 func _button_rect(i: int) -> Rect2:
 	return Rect2(BUTTON_XS[i], BUTTON_Y, BUTTON_SIZE, BUTTON_SIZE)
 
@@ -733,7 +918,7 @@ func _draw_banner() -> void:
 		_text("Every tray has set. Tap for the next order.", r.get_center() + Vector2(0, 58), 30, Color("a06a3f"), 0, Color.BLACK, font_semibold)
 	else:
 		_text("Gumdrop scratches its head...", r.get_center() + Vector2(0, -40), 52, Color.WHITE, 5, Color("6b3510"), font, 3.0)
-		_text("Every cup is full and no cube can land. Undo or restart.", r.get_center() + Vector2(0, 58), 30, Color("a06a3f"), 0, Color.BLACK, font_semibold)
+		_text("The belt is full and no jelly can land. Undo or restart.", r.get_center() + Vector2(0, 58), 30, Color("a06a3f"), 0, Color.BLACK, font_semibold)
 
 
 func _draw_menu() -> void:

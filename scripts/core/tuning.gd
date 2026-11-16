@@ -24,6 +24,18 @@ const DEFAULTS := {
 		"wobble_px": 9.0,
 		"wobble_speed": 50.0,
 	},
+	"goo": {
+		"enabled": true,
+		"gobs_per_cube": 7,
+		"gob_spacing_px": 24.0,
+		"blob_radius_px": 36.0,
+		"clump_length_px": 120.0,
+		"cling": 1.0,
+		"slosh": 0.6,
+		"jostle": 1.0,
+		"field_scale": 0.25,
+		"render_scale": 0.75,
+	},
 	"solver": {
 		"show_readout": true,
 		"max_boards": 300000,

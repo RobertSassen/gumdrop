@@ -9,6 +9,7 @@ const BoardState = preload("res://scripts/core/board_state.gd")
 const Level = preload("res://scripts/core/level.gd")
 const Solver = preload("res://scripts/core/solver.gd")
 const Tuning = preload("res://scripts/core/tuning.gd")
+const GooSim = preload("res://scripts/goo/goo_sim.gd")
 
 const R := 0  # cherry
 const O := 1  # tangerine
@@ -36,6 +37,10 @@ func _init() -> void:
 	test_tuning_file_loads()
 	test_levels_match_python_model()
 	test_levels_are_solvable()
+	test_goo_pours_rides_and_lands()
+	test_goo_splits_a_run_between_tray_and_belt()
+	test_goo_rests_when_the_belt_stops()
+	test_goo_cost_per_step()
 	print("\n%d checks, %d failed" % [checks, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -254,3 +259,139 @@ func test_levels_are_solvable() -> void:
 		var d: Dictionary = Solver.new().check_dead_end(lv.make_board())
 		print("  dead-end check at start: %s, %d boards, %.1f ms" % [Solver.result_name(d["result"]),
 				d["states"], d["usec"] / 1000.0])
+
+
+# --- Flowing jelly -----------------------------------------------------------
+
+const GOO_BELT := 2400  # pixels round the test belt, a circle
+
+
+## A board with two trays on opposite sides of a round belt, and the goo for it.
+## Returns [board, goo].
+func make_goo(trays: Array, cups: int) -> Array:
+	var b = BoardState.new()
+	b.setup(trays, PackedInt32Array([0, 1]), PackedInt32Array([0, GOO_BELT / 2]), GOO_BELT, cups, [], 4)
+	var g = GooSim.new()
+	var pts := PackedVector2Array()
+	var n := GOO_BELT / 6
+	for k in n:
+		pts.append(Vector2.from_angle(TAU * k / n) * (GOO_BELT / TAU))
+	g.set_path(pts, GOO_BELT)
+	return [b, g]
+
+
+func goo_point(pos: float) -> Vector2:
+	return Vector2.from_angle(TAU * pos / GOO_BELT) * (GOO_BELT / TAU)
+
+
+## Taps tray t the way the game does: the rules first, then the pour.
+func goo_tap(b, g, t: int) -> void:
+	var flavor: int = b.front(t)
+	var held: int = b.trays[t].size()
+	var left: int = b.tap(t)
+	var slots := PackedInt32Array()
+	var offsets := PackedFloat32Array()
+	for i in left:
+		slots.append(held - 1 - i)
+		offsets.append(i * 120.0)
+	var stop: float = b.stop_pos[b.stop_of[t]]
+	var mouth := goo_point(stop) * 0.85
+	g.pour(t, flavor, slots, offsets, mouth, mouth.normalized(), stop)
+
+
+## Runs belt and goo together for `steps` sixtieths of a second.
+func goo_run(b, g, steps: int, moving := true) -> void:
+	for _i in steps:
+		if moving and not b.riding.is_empty():
+			var px := 15
+			var before: Array = b.riding.duplicate()
+			var landed: Array = b.advance(px)
+			if not landed.is_empty():
+				var targets := []
+				for l in landed:
+					var stop: float = b.stop_pos[b.stop_of[l.y]]
+					var mouth := goo_point(stop) * 0.85
+					targets.append({"flavor": l.x, "tray": l.y, "slot": b.trays[l.y].size() - 1,
+							"front": mouth, "cavity": mouth * 0.8, "stop": stop})
+				g.cubes_landed(before, b.riding, px, b.belt_length, targets)
+		var positions := PackedFloat32Array()
+		for r in b.riding:
+			positions.append(r.y)
+		g.step(1.0 / 60.0, moving, positions)
+
+
+func goo_all_on_belt(g) -> bool:
+	for i in g.pos.size():
+		var off: float = absf(g.pos[i].length() - GOO_BELT / TAU)
+		if is_nan(off) or (g.state[i] == GooSim.RIDE and off > g.half_width + 10.0):
+			print("  gob %d is %.1f px off the center line" % [i, off])
+			return false
+	return true
+
+
+func test_goo_pours_rides_and_lands() -> void:
+	var made := make_goo([[R], [R, R, R]], 4)
+	var b = made[0]
+	var g = made[1]
+	goo_tap(b, g, 0)
+	check(g.tray_leaving(0).size() == 1, "a tapped cube starts pouring out of its tray")
+	goo_run(b, g, 40)
+	check(g.gob_count() == g.gobs_per_cube, "one cube pours out as %d gobs" % g.gobs_per_cube)
+	check(g.tray_leaving(0).is_empty(), "the pour finishes")
+	check(goo_all_on_belt(g), "riding goo stays between the rails")
+	# The leash: every gob stays near where the rules say its cube is.
+	var near := true
+	for i in g.pos.size():
+		var along: float = fposmod(g.pos[i].angle(), TAU) / TAU * GOO_BELT
+		var behind: float = fposmod(b.riding[0].y - along + GOO_BELT / 2.0, GOO_BELT) - GOO_BELT / 2.0
+		if behind < -40.0 or behind > g.clump_length + 40.0:
+			near = false
+	check(near, "the goo stays with its cube's place on the belt")
+	goo_run(b, g, 45)
+	check(b.riding.is_empty() and b.trays[1].size() == 4, "the rules land the cube in tray 1")
+	check(g.tray_fill(1).has(3), "its goo is still flowing into the tray")
+	goo_run(b, g, 90)
+	check(g.gob_count() == 0 and g.clumps.is_empty(), "all the goo ends up in the tray")
+	check(g.tray_fill(1).is_empty(), "the landed cube shows whole")
+
+
+func test_goo_splits_a_run_between_tray_and_belt() -> void:
+	# Two cherries leave together; tray 1 only has room for one.
+	var made := make_goo([[G, R, R], [R, R, R]], 4)
+	var b = made[0]
+	var g = made[1]
+	goo_tap(b, g, 0)
+	goo_run(b, g, 170)
+	check(b.riding.size() == 1 and g.ride.size() == 1, "one cube rides on, with one clump")
+	check(g.gob_count() == g.gobs_per_cube, "the other cube's goo has gone into the tray")
+	check(goo_all_on_belt(g), "the riding half stays on the belt")
+
+
+func test_goo_rests_when_the_belt_stops() -> void:
+	var made := make_goo([[R], [G]], 4)
+	var b = made[0]
+	var g = made[1]
+	goo_tap(b, g, 0)
+	goo_run(b, g, 60)
+	goo_run(b, g, 240, false)
+	check(g.asleep, "goo on a stopped belt comes to rest and sleeps")
+	check(g.gob_count() == g.gobs_per_cube, "resting keeps the goo")
+	check(not g.step(1.0 / 60.0, false, PackedFloat32Array([b.riding[0].y])), "a sleeping step does no work")
+
+
+## Not a pass or fail on speed (machines differ); it prints the cost so a
+## change that makes the goo heavier shows up, and checks nothing blew up.
+func test_goo_cost_per_step() -> void:
+	var made := make_goo([[Y, R, R, R], [O, G, G, G]], 6)
+	var b = made[0]
+	var g = made[1]
+	goo_tap(b, g, 0)
+	goo_run(b, g, 30)
+	goo_tap(b, g, 1)
+	goo_run(b, g, 60)
+	var t0 := Time.get_ticks_usec()
+	goo_run(b, g, 600)
+	var usec := (Time.get_ticks_usec() - t0) / 600.0
+	print("goo: %d gobs, %.0f microseconds per step (a 60 fps frame is 16667)" % [g.gob_count(), usec])
+	check(g.gob_count() == 6 * g.gobs_per_cube, "a full belt of six cubes keeps all its goo")
+	check(goo_all_on_belt(g), "a full belt stays between the rails")

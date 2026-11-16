@@ -31,7 +31,8 @@ tap anywhere for the next order.
 | Trays set, panes fill in the window cake, win screen | Gumdrop, the shop, sound |
 | Unlimited undo and restart | Real pictures in the cake (each pane takes its tray's flavor for now) |
 | 12 flavors, one per tray in every level | Level select, progress saving |
-| Game stops only when every cup is full and no cube can land | Twists (hidden cubes from level 41) |
+| Game stops only when the belt is full and no jelly can land | Twists (hidden cubes from level 41) |
+| Jelly flows along the belt as goo, pours out of trays and streams into them | |
 | 30 levels on the difficulty schedule: tutorial, normal, hard and expert | |
 
 ### How the belt works
@@ -41,14 +42,46 @@ finds no home keeps going round until a tray takes it. Because the belt keeps
 moving, *when* you tap can matter: it decides which tray a riding cube reaches
 first.
 
-The **Free cups** pill between the window cake and the board shows one cup
-per cup on the loop: white cups are free, faded cups hold a riding cube. Only
-cups with a cube are drawn on the belt.
+The belt has room for a set number of cubes (`cups` in the level file, from
+when jelly rode in cups). The **Belt space** gauge between the window cake and
+the board fills with the flavors riding the belt, one stretch per cube.
 
-The game stops only when every cup is full and a full lap would land nothing.
+The game stops only when the belt is full and a full lap would land nothing.
 A solver readout under the board says whether the board can still be finished.
 It's there for testing and never stops the game; turn it off with
 `solver.show_readout` in `tuning.json`.
+
+### Flowing jelly
+
+Jelly rides the belt as goo. A tapped tray pours its front run onto the passing
+belt, the goo stretches and swings to the outside on bends, a flavor clings to
+itself, and a tray that takes a cube draws its goo in as a stream.
+
+The rules don't know about any of this. `board_state.gd` still says where each
+cube is on the belt and which tray takes it, so the solver, the levels and the
+tests are unchanged. The goo is a look on top: each riding cube owns a clump of
+soft "gobs" (`scripts/goo/goo_sim.gd`) that move freely but are kept near the
+cube's place on the belt, and `scripts/goo/goo_layer.gd` melts the gobs into
+one smooth glossy surface with `shaders/goo.gdshader`.
+
+It's built to be light on a phone's battery:
+
+- Seven gobs per cube, so a full belt of six cubes is 42 gobs. One step of a
+  full belt takes about 0.17 ms in GDScript on a desktop (the tests print it).
+- The goo is drawn at a quarter of the screen resolution into a small
+  off-screen picture and smoothed up by the shader, which only reads that
+  picture a handful of times per pixel. Both passes cover only the board, and
+  are only re-rendered on frames where the goo moved.
+- When the belt stops, the goo settles and goes to sleep: no stepping, no
+  rendering.
+- The whole screen is only redrawn while something moves (`low_processor_mode`
+  is on). An idle board draws nothing at all, and twinkling set trays redraw
+  ten times a second.
+- The frame rate is capped at 60, so 120 Hz phones don't render twice as much.
+
+`goo` in `tuning.json` has the dials, and `"enabled": false` brings the cups
+back. A level can have at most six flavors on the belt at once (six color
+channels in the goo picture); no level has more than six cups.
 
 ## Tuning
 
@@ -62,6 +95,7 @@ level). Any key you leave out falls back to its default in
 | `rules` | `tray_capacity`, `default_cups` | Cavities per tray, and cups for levels that don't set their own. These change every puzzle, so re-check levels with `tools/sim.py` after editing. |
 | `loop` | `belt_speed_px_per_sec`, `riding_cube_gap_px` | How fast the belt runs, and how far apart cubes that left a tray together are drawn. |
 | `feedback` | `wobble_seconds`, `wobble_px`, `wobble_speed` | The tray wobble when a tap can't send anything. |
+| `goo` | `enabled`, `gobs_per_cube`, `gob_spacing_px`, `blob_radius_px`, `clump_length_px`, `cling`, `slosh`, `jostle`, `field_scale`, `render_scale` | The flowing jelly on the belt: how much goo a cube is, how it holds together and moves, and how much drawing it costs. Looks only; no puzzle changes. |
 | `solver` | `show_readout`, `max_boards`, `max_milliseconds` | The testing readout under the board and its budget. |
 | `look` | `cube_size_px`, `jelly_gloss`, `belt_width_px`, `rail_width_px`, `belt_corner_radius_px`, `arrow_spacing_px`, `flavors`, `colors` | Sizes, the belt's shape and the whole palette. Jelly art is white and is tinted with `flavors` at startup, so color tests need no new art. |
 
@@ -89,7 +123,7 @@ each flavor's color. The font is Fredoka (SIL Open Font License, in
 `art/fonts/`).
 
 The drawn belt rounds the loop's corners; the rules still use the level's
-sharp loop, and cups near a corner are moved onto the curve only when drawn.
+sharp loop, and jelly near a corner is moved onto the curve only when drawn.
 
 ## Project layout
 
@@ -103,6 +137,10 @@ scripts/core/
   level.gd               Level loading and loop geometry (tray order, direction)
   solver.gd              Level check (patient player) and dead-end readout
   tuning.gd              Loads tuning.json, with defaults for missing keys
+scripts/goo/
+  goo_sim.gd             The flowing jelly: gobs that follow the rules' cubes (no drawing)
+  goo_layer.gd           Draws the gobs into one small picture for the game
+shaders/goo.gdshader     Melts that picture into smooth glossy jelly
 levels/*.json            Levels, loaded in file-name order
 tests/run_tests.gd       Headless tests
 tests/fixtures/          Move traces recorded by the Python model
@@ -110,6 +148,7 @@ tools/sim.py             Python copy of the rules, for checking and scoring leve
 tools/build_levels.py    The level plan; builds levels/ to hit each level's difficulty band
 tools/gen_level.py       Searches shuffles for solvable levels
 tools/screenshot.gd      Saves a full-size screenshot, optionally after some taps
+tools/record.gd          Saves a run of frames with timed taps, for checking motion
 tools/art/               Renders the pictures in art/ (Node, three.js, Playwright)
 art/                     Sprites, background, UI pieces and the font
 ```
