@@ -70,9 +70,7 @@ func _make_viewport() -> SubViewport:
 ## Reads the goo values from tuning.json. Call before set_belt().
 func apply_tuning(colors: Array, belt_speed: float, belt_width: float) -> void:
 	flavor_colors = colors
-	sim.gobs_per_cube = clampi(Tuning.integer("goo", "gobs_per_cube"), 3, 16)
 	sim.spacing = maxf(Tuning.num("goo", "gob_spacing_px"), 8.0)
-	sim.clump_length = maxf(Tuning.num("goo", "clump_length_px"), 20.0)
 	sim.cling = Tuning.num("goo", "cling")
 	sim.slosh = Tuning.num("goo", "slosh")
 	sim.jostle = Tuning.num("goo", "jostle")
@@ -94,6 +92,7 @@ func apply_tuning(colors: Array, belt_speed: float, belt_width: float) -> void:
 func set_belt(points: PackedVector2Array, length: float, cups: int) -> void:
 	sim.clear()
 	sim.set_path(points, length)
+	sim.fit_cubes(cups, Tuning.num("goo", "belt_fill"))
 	var lo := Vector2(INF, INF)
 	var hi := Vector2(-INF, -INF)
 	for p in points:
