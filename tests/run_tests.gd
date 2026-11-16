@@ -277,6 +277,7 @@ func make_goo(trays: Array, cups: int) -> Array:
 	for k in n:
 		pts.append(Vector2.from_angle(TAU * k / n) * (GOO_BELT / TAU))
 	g.set_path(pts, GOO_BELT)
+	g.fit_cubes(cups)
 	return [b, g]
 
 
@@ -293,7 +294,7 @@ func goo_tap(b, g, t: int) -> void:
 	var offsets := PackedFloat32Array()
 	for i in left:
 		slots.append(held - 1 - i)
-		offsets.append(i * 120.0)
+		offsets.append(i * g.clump_length)
 	var stop: float = b.stop_pos[b.stop_of[t]]
 	var mouth := goo_point(stop) * 0.85
 	g.pour(t, flavor, slots, offsets, mouth, mouth.normalized(), stop)
@@ -333,9 +334,10 @@ func test_goo_pours_rides_and_lands() -> void:
 	var made := make_goo([[R], [R, R, R]], 4)
 	var b = made[0]
 	var g = made[1]
+	check(is_equal_approx(g.clump_length * 4, GOO_BELT), "four cubes of goo cover the whole belt")
 	goo_tap(b, g, 0)
 	check(g.tray_leaving(0).size() == 1, "a tapped cube starts pouring out of its tray")
-	goo_run(b, g, 40)
+	goo_run(b, g, 50)
 	check(g.gob_count() == g.gobs_per_cube, "one cube pours out as %d gobs" % g.gobs_per_cube)
 	check(g.tray_leaving(0).is_empty(), "the pour finishes")
 	check(goo_all_on_belt(g), "riding goo stays between the rails")
@@ -347,10 +349,10 @@ func test_goo_pours_rides_and_lands() -> void:
 		if behind < -40.0 or behind > g.clump_length + 40.0:
 			near = false
 	check(near, "the goo stays with its cube's place on the belt")
-	goo_run(b, g, 45)
+	goo_run(b, g, 35)
 	check(b.riding.is_empty() and b.trays[1].size() == 4, "the rules land the cube in tray 1")
 	check(g.tray_fill(1).has(3), "its goo is still flowing into the tray")
-	goo_run(b, g, 90)
+	goo_run(b, g, 120)
 	check(g.gob_count() == 0 and g.clumps.is_empty(), "all the goo ends up in the tray")
 	check(g.tray_fill(1).is_empty(), "the landed cube shows whole")
 
@@ -361,7 +363,7 @@ func test_goo_splits_a_run_between_tray_and_belt() -> void:
 	var b = made[0]
 	var g = made[1]
 	goo_tap(b, g, 0)
-	goo_run(b, g, 170)
+	goo_run(b, g, 280)
 	check(b.riding.size() == 1 and g.ride.size() == 1, "one cube rides on, with one clump")
 	check(g.gob_count() == g.gobs_per_cube, "the other cube's goo has gone into the tray")
 	check(goo_all_on_belt(g), "the riding half stays on the belt")
@@ -373,7 +375,7 @@ func test_goo_rests_when_the_belt_stops() -> void:
 	var g = made[1]
 	goo_tap(b, g, 0)
 	goo_run(b, g, 60)
-	goo_run(b, g, 240, false)
+	goo_run(b, g, 300, false)
 	check(g.asleep, "goo on a stopped belt comes to rest and sleeps")
 	check(g.gob_count() == g.gobs_per_cube, "resting keeps the goo")
 	check(not g.step(1.0 / 60.0, false, PackedFloat32Array([b.riding[0].y])), "a sleeping step does no work")
@@ -388,10 +390,20 @@ func test_goo_cost_per_step() -> void:
 	goo_tap(b, g, 0)
 	goo_run(b, g, 30)
 	goo_tap(b, g, 1)
-	goo_run(b, g, 60)
+	goo_run(b, g, 240)
 	var t0 := Time.get_ticks_usec()
 	goo_run(b, g, 600)
 	var usec := (Time.get_ticks_usec() - t0) / 600.0
 	print("goo: %d gobs, %.0f microseconds per step (a 60 fps frame is 16667)" % [g.gob_count(), usec])
 	check(g.gob_count() == 6 * g.gobs_per_cube, "a full belt of six cubes keeps all its goo")
 	check(goo_all_on_belt(g), "a full belt stays between the rails")
+	# Full belt: the goo reaches all the way round, with no bare stretch longer
+	# than a couple of gobs.
+	var marks := []
+	for i in g.pos.size():
+		marks.append(fposmod(g.pos[i].angle(), TAU) / TAU * GOO_BELT)
+	marks.sort()
+	var widest: float = GOO_BELT - marks[marks.size() - 1] + marks[0]
+	for i in range(1, marks.size()):
+		widest = maxf(widest, marks[i] - marks[i - 1])
+	check(widest < g.spacing * 2.5, "a full belt is covered end to end (widest bare stretch %.0f px)" % widest)

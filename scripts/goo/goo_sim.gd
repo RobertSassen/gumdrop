@@ -4,9 +4,13 @@ extends RefCounted
 ## The rules (board_state.gd) still decide everything that matters: where each
 ## cube's worth of jelly is on the belt and which tray takes it. This file only
 ## makes that jelly move like goo. Each riding cube owns a clump of gobs that
-## are free to jostle, stretch round corners and cling to their own flavor, and
-## a soft leash keeps the clump near the cube's place on the belt. When the
+## are free to jostle, swing out on corners and cling to their own flavor, and
+## soft springs keep the clump spread over the cube's stretch of belt. When the
 ## rules land a cube, its gobs ride on to the tray's mouth and stream in.
+##
+## One cube's goo covers one belt space: the belt's length divided by how many
+## cubes it holds. So a full belt is covered end to end. Goo that would overlap
+## other goo pushes it along the belt to make room.
 ##
 ## There is no drawing here, so tests can run it headless. goo_layer.gd draws it.
 ##
@@ -24,17 +28,21 @@ const VISCOSITY_SAME := 2.2
 const VISCOSITY_OTHER := 0.8
 const DRAG := 10.0
 const WALL := 1500.0
-const CENTER := 10.0
-const LEASH := 80.0
-const GATHER := 6.0
+const CENTER := 40.0
+## How hard a gob is pulled to its own place along its clump.
+const SLOT := 30.0
+## How fast overlapping clumps push each other apart, and drift back after.
+const MAKE_ROOM := 12.0
+const SETTLE_BACK := 0.15
 const NOISE := 300.0
 const MAX_SPEED := 2600.0
 
 # Set from tuning.json by the layer.
 var gobs_per_cube := 7
-var spacing := 24.0
-var clump_length := 96.0
-var half_width := 18.0
+var spacing := 34.0
+## Belt covered by one cube's goo, in rule pixels. Set by fit_cubes().
+var clump_length := 240.0
+var half_width := 15.0
 var cling := 1.0
 var slosh := 0.6
 var jostle := 1.0
@@ -62,6 +70,8 @@ var clump_of := PackedInt32Array()
 var seg := PackedInt32Array()
 var timer := PackedFloat32Array()
 var from := PackedVector2Array()
+## Where along its clump a gob belongs: 0 at the front, 1 at the tail.
+var slot := PackedFloat32Array()
 
 ## Clump id -> Dictionary. One clump per cube's worth of jelly.
 var clumps := {}
@@ -91,12 +101,20 @@ func set_path(points: PackedVector2Array, length: float) -> void:
 		bend[i] = (tangent[(i + 1) % n] - tangent[(i - 1 + n) % n]) / maxf(span, 0.001)
 
 
+## Sizes a cube's goo so that `cups` cubes cover `fill` of the belt (1 = all of
+## it), and picks how many gobs that takes. Call after set_path().
+func fit_cubes(cups: int, fill: float = 1.0) -> void:
+	clump_length = belt_len * clampf(fill, 0.1, 1.0) / maxi(cups, 1)
+	gobs_per_cube = clampi(roundi(clump_length / spacing), 3, 40)
+
+
 func clear() -> void:
 	for a in [pos, vel, acc, from]:
 		a.clear()
 	for a in [flavor, state, clump_of, seg]:
 		a.clear()
 	timer.clear()
+	slot.clear()
 	clumps.clear()
 	ride.clear()
 	asleep = true
@@ -113,11 +131,12 @@ func reset(flavors: PackedInt32Array, positions: PackedFloat32Array, offsets: Pa
 	for i in flavors.size():
 		var c := _new_clump(flavors[i], offsets[i])
 		ride.append(c["id"])
+		c["pos"] = positions[i]
 		for j in gobs_per_cube:
-			var s := positions[i] - offsets[i] - (j + 0.5) / gobs_per_cube * clump_length
-			var k := _index_at(s)
-			var side := tangent[k].orthogonal() * spacing * (0.45 if j % 2 == 0 else -0.45)
-			_add_gob(c, path[k] + side, tangent[k] * belt_speed * rate[k], k, RIDE)
+			var frac := (j + 0.5) / gobs_per_cube
+			var k := _index_at(positions[i] - offsets[i] - frac * clump_length)
+			var side := tangent[k].orthogonal() * spacing * (0.2 if j % 2 == 0 else -0.2)
+			_add_gob(c, path[k] + side, tangent[k] * belt_speed * rate[k], k, RIDE, frac)
 	asleep = flavors.is_empty()
 
 
@@ -132,6 +151,7 @@ func pour(tray: int, cube_flavor: int, slots: PackedInt32Array, offsets: PackedF
 		c["to_emit"] = gobs_per_cube
 		c["emit_gap"] = clump_length / belt_speed / gobs_per_cube
 		c["emit_clock"] = offsets[i] / belt_speed + c["emit_gap"] * 0.5
+		c["pos"] = stop
 		c["src_tray"] = tray
 		c["src_slot"] = slots[i]
 		c["src_point"] = point
@@ -172,7 +192,7 @@ func cubes_landed(before: Array, after: Array, px: int, rule_len: int, targets: 
 		c["home_front"] = t["front"]
 		c["home_cavity"] = t["cavity"]
 		c["home_stop"] = t["stop"]
-		c["home_clock"] = (c["off"] + clump_length) / belt_speed + 0.6
+		c["home_clock"] = (c["off"] + maxf(c["shift"], 0.0) + clump_length) / belt_speed + 0.6
 		for g in pos.size():
 			if clump_of[g] == c["id"] and state[g] == RIDE:
 				state[g] = HOME
@@ -207,17 +227,21 @@ func step(dt: float, moving: bool, positions: PackedFloat32Array) -> bool:
 		return false
 	for i in mini(ride.size(), positions.size()):
 		clumps[ride[i]]["pos"] = positions[i]
+	# Goo on its way to a tray is past the rules' care; it keeps riding the belt.
+	for c in clumps.values():
+		if c["home_tray"] >= 0:
+			c["pos"] += belt_speed * dt
+	_make_room(dt)
 	_emit(dt)
 	_pair_forces()
 	var fastest := 0.0
 	var busy := false
-	var half_len := clump_length / 2.0
 	var arrived := PackedInt32Array()
 	for i in pos.size():
 		var c: Dictionary = clumps[clump_of[i]]
 		if state[i] == ENTER:
 			busy = true
-			timer[i] += dt / enter_seconds
+			timer[i] += dt / (enter_seconds + from[i].distance_to(c["home_front"]) / 1500.0)
 			var u := minf(timer[i], 1.0)
 			var e := u * u * (3.0 - 2.0 * u)
 			var a: Vector2 = from[i].lerp(c["home_front"], e)
@@ -248,13 +272,9 @@ func step(dt: float, moving: bool, positions: PackedFloat32Array) -> bool:
 			a -= bend[k] * (belt_speed * rate[k]) ** 2 * slosh
 			a += Vector2(_rand() - 0.5, _rand() - 0.5) * NOISE * jostle
 		if st == RIDE:
-			# The leash: free inside the clump's stretch of belt, pulled back outside it.
-			var off := _wrap(along - (c["pos"] - c["off"] - half_len))
-			if off > half_len:
-				a -= t * LEASH * (off - half_len)
-			elif off < -half_len:
-				a -= t * LEASH * (off + half_len)
-			a -= t * GATHER * off
+			# A soft pull to the gob's own place along its clump, so a cube's goo
+			# stays spread over its stretch of belt.
+			a -= t * SLOT * _wrap(along - (c["pos"] - c["off"] - c["shift"] - slot[i] * clump_length))
 		var v := vel[i] + a * dt
 		var speed := v.length()
 		if speed > MAX_SPEED:
@@ -302,7 +322,7 @@ func step(dt: float, moving: bool, positions: PackedFloat32Array) -> bool:
 
 func _new_clump(cube_flavor: int, off: float) -> Dictionary:
 	var c := {
-		"id": _next_id, "flavor": cube_flavor, "off": off, "pos": 0.0, "alive": 0,
+		"id": _next_id, "flavor": cube_flavor, "off": off, "shift": 0.0, "pos": 0.0, "alive": 0,
 		"to_emit": 0, "emit_gap": 0.0, "emit_clock": 0.0,
 		"src_tray": -1, "src_slot": 0, "src_point": Vector2.ZERO, "src_dir": Vector2.ZERO, "src_seg": 0,
 		"home_tray": -1, "home_slot": 0, "home_front": Vector2.ZERO, "home_cavity": Vector2.ZERO,
@@ -313,7 +333,7 @@ func _new_clump(cube_flavor: int, off: float) -> Dictionary:
 	return c
 
 
-func _add_gob(c: Dictionary, p: Vector2, v: Vector2, k: int, st: int) -> void:
+func _add_gob(c: Dictionary, p: Vector2, v: Vector2, k: int, st: int, frac: float) -> void:
 	pos.append(p)
 	vel.append(v)
 	acc.append(Vector2.ZERO)
@@ -323,6 +343,7 @@ func _add_gob(c: Dictionary, p: Vector2, v: Vector2, k: int, st: int) -> void:
 	clump_of.append(c["id"])
 	seg.append(k)
 	timer.append(0.0)
+	slot.append(frac)
 	c["alive"] += 1
 
 
@@ -338,11 +359,13 @@ func _remove_gob(i: int) -> void:
 		clump_of[i] = clump_of[last]
 		seg[i] = seg[last]
 		timer[i] = timer[last]
+		slot[i] = slot[last]
 	for a in [pos, vel, acc, from]:
 		a.resize(last)
 	for a in [flavor, state, clump_of, seg]:
 		a.resize(last)
 	timer.resize(last)
+	slot.resize(last)
 
 
 func _drop_clump(c: Dictionary) -> void:
@@ -359,11 +382,36 @@ func _emit(dt: float) -> void:
 		c["emit_clock"] -= dt
 		while c["emit_clock"] <= 0.0 and c["to_emit"] > 0:
 			c["emit_clock"] += c["emit_gap"]
+			var frac: float = (gobs_per_cube - c["to_emit"] + 0.5) / gobs_per_cube
 			c["to_emit"] -= 1
 			var k: int = c["src_seg"]
 			var side: Vector2 = (c["src_dir"] as Vector2).orthogonal() * (_rand() - 0.5) * 14.0
 			var v: Vector2 = c["src_dir"] * pour_speed + tangent[k] * belt_speed * rate[k] * 0.5
-			_add_gob(c, c["src_point"] + side, v, k, POUR)
+			_add_gob(c, c["src_point"] + side, v, k, POUR, frac)
+
+
+## Clumps whose stretches of belt overlap push each other along it, half the
+## overlap each way, and drift back to their rule positions when there's room.
+## With the belt full they end up nose to tail all the way round.
+func _make_room(dt: float) -> void:
+	var list: Array = clumps.values()
+	var n := list.size()
+	for c in list:
+		c["shift"] *= 1.0 - minf(SETTLE_BACK * dt, 1.0)
+		c["head"] = fposmod(c["pos"] - c["off"] - c["shift"], belt_len)
+	if n < 2:
+		return
+	list.sort_custom(func(x, y): return x["head"] < y["head"])
+	var ease := minf(MAKE_ROOM * dt, 1.0) * 0.5
+	for i in n:
+		var behind: Dictionary = list[i]
+		var ahead: Dictionary = list[(i + 1) % n]
+		var gap: float = fposmod(ahead["head"] - behind["head"], belt_len) - clump_length
+		if n == 2 and i == 1 and gap + clump_length < 0.001:
+			continue
+		if gap < 0.0:
+			ahead["shift"] += gap * ease
+			behind["shift"] -= gap * ease
 
 
 ## Pushes gobs apart when they overlap, lets one flavor cling to itself, and
@@ -376,6 +424,9 @@ func _pair_forces() -> void:
 	var rc := spacing * 1.9
 	var rc2 := rc * rc
 	var pull := COHESION * cling
+	# Gobs far apart along the belt can't touch; their belt indices say so cheaply.
+	var np := path.size()
+	var reach := int(rc / (ds * 0.7)) + 2
 	for i in n:
 		if state[i] == ENTER:
 			continue
@@ -383,7 +434,11 @@ func _pair_forces() -> void:
 		var vi := vel[i]
 		var fi := flavor[i]
 		var ai := Vector2.ZERO
+		var si := seg[i]
 		for j in range(i + 1, n):
+			var gap := absi(seg[j] - si)
+			if gap > reach and np - gap > reach:
+				continue
 			var d := pos[j] - pi
 			var d2 := d.length_squared()
 			if d2 > rc2 or d2 < 0.0001 or state[j] == ENTER:

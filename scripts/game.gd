@@ -557,14 +557,16 @@ func _belt_draw_point(pos: float) -> Vector2:
 # --- Flowing jelly -----------------------------------------------------------
 
 ## How far behind its rule position each riding cube's jelly sits: cubes that
-## left a tray together share a position, so each one trails the one before.
+## left a tray together share a position, so each one trails the one before by
+## one belt space.
 func _riding_offsets() -> PackedFloat32Array:
 	var out := PackedFloat32Array()
 	var at_pos := {}
+	var gap: float = goo.sim.clump_length
 	for r in board.riding:
 		var k: int = at_pos.get(r.y, 0)
 		at_pos[r.y] = k + 1
-		out.append(k * cube_gap)
+		out.append(k * gap)
 	return out
 
 

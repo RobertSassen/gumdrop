@@ -8,7 +8,7 @@
  },
 
  "loop": {
-  "_notes": "The belt never stops while cubes ride it. Speed is along the belt in screen pixels per second (the screen is 1080 wide; the loops are 2500 to 3900 px around). The gap spaces out cubes that left a tray together; with flowing jelly, keep goo.clump_length_px at or under it.",
+  "_notes": "The belt never stops while cubes ride it. Speed is along the belt in screen pixels per second (the screen is 1080 wide; the loops are 2500 to 3900 px around). The gap spaces out cubes that left a tray together, when jelly rides in cups.",
   "belt_speed_px_per_sec": 900,
   "riding_cube_gap_px": 120
  },
@@ -21,12 +21,11 @@
  },
 
  "goo": {
-  "_notes": "The flowing jelly on the belt. The rules still place every cube; this is only how it looks and moves. enabled false rides jelly in cups instead. Each cube is gobs_per_cube soft gobs that rest gob_spacing_px apart, each drawn as a blob of blob_radius_px that melts into its neighbors, and a clump stays within clump_length_px of belt. cling is how hard a flavor holds together, slosh how far it swings out on bends, jostle how restless it is (0 is still). Battery: fewer gobs, and lower field_scale and render_scale (the goo is drawn small, then smoothed up to screen size), all cost less.",
+  "_notes": "The flowing jelly on the belt. The rules still place every cube; this is only how it looks and moves. enabled false rides jelly in cups instead. One cube's goo covers one belt space (the belt's length divided by the level's cups), so a full belt is covered end to end; belt_fill under 1 leaves gaps (0.8 covers 80% when full). A cube is a line of soft gobs gob_spacing_px apart, each drawn as a blob of blob_radius_px that melts into its neighbors. cling is how hard a flavor holds together, slosh how far it swings out on bends, jostle how restless it is (0 is still). Battery: wider gob_spacing_px (fewer gobs), and lower field_scale and render_scale (the goo is drawn small, then smoothed up to screen size), all cost less.",
   "enabled": true,
-  "gobs_per_cube": 7,
-  "gob_spacing_px": 24,
-  "blob_radius_px": 36,
-  "clump_length_px": 120,
+  "belt_fill": 1.0,
+  "gob_spacing_px": 34,
+  "blob_radius_px": 46,
   "cling": 1.0,
   "slosh": 0.6,
   "jostle": 1.0,

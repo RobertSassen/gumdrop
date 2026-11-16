@@ -57,6 +57,12 @@ Jelly rides the belt as goo. A tapped tray pours its front run onto the passing
 belt, the goo stretches and swings to the outside on bends, a flavor clings to
 itself, and a tray that takes a cube draws its goo in as a stream.
 
+One cube's goo covers one belt space: the belt's length divided by the level's
+`cups`. So the Belt space gauge and the belt agree, and a full belt is covered
+with goo end to end. A run of three cubes pours out as a stream three spaces
+long, and goo that would land on other goo pushes it along the belt to make
+room.
+
 The rules don't know about any of this. `board_state.gd` still says where each
 cube is on the belt and which tray takes it, so the solver, the levels and the
 tests are unchanged. The goo is a look on top: each riding cube owns a clump of
@@ -66,8 +72,10 @@ one smooth glossy surface with `shaders/goo.gdshader`.
 
 It's built to be light on a phone's battery:
 
-- Seven gobs per cube, so a full belt of six cubes is 42 gobs. One step of a
-  full belt takes about 0.17 ms in GDScript on a desktop (the tests print it).
+- A cube is one line of large gobs, about 34 px apart, so a full belt is
+  roughly 70 to 115 gobs whatever the level. One step of a full belt takes
+  about 0.3 ms in GDScript on a desktop (the tests print it), and gobs far
+  apart along the belt are skipped without measuring them.
 - The goo is drawn at a quarter of the screen resolution into a small
   off-screen picture and smoothed up by the shader, which only reads that
   picture a handful of times per pixel. Both passes cover only the board, and
@@ -95,7 +103,7 @@ level). Any key you leave out falls back to its default in
 | `rules` | `tray_capacity`, `default_cups` | Cavities per tray, and cups for levels that don't set their own. These change every puzzle, so re-check levels with `tools/sim.py` after editing. |
 | `loop` | `belt_speed_px_per_sec`, `riding_cube_gap_px` | How fast the belt runs, and how far apart cubes that left a tray together are drawn. |
 | `feedback` | `wobble_seconds`, `wobble_px`, `wobble_speed` | The tray wobble when a tap can't send anything. |
-| `goo` | `enabled`, `gobs_per_cube`, `gob_spacing_px`, `blob_radius_px`, `clump_length_px`, `cling`, `slosh`, `jostle`, `field_scale`, `render_scale` | The flowing jelly on the belt: how much goo a cube is, how it holds together and moves, and how much drawing it costs. Looks only; no puzzle changes. |
+| `goo` | `enabled`, `belt_fill`, `gob_spacing_px`, `blob_radius_px`, `cling`, `slosh`, `jostle`, `field_scale`, `render_scale` | The flowing jelly on the belt: how much goo a cube is, how it holds together and moves, and how much drawing it costs. Looks only; no puzzle changes. |
 | `solver` | `show_readout`, `max_boards`, `max_milliseconds` | The testing readout under the board and its budget. |
 | `look` | `cube_size_px`, `jelly_gloss`, `belt_width_px`, `rail_width_px`, `belt_corner_radius_px`, `arrow_spacing_px`, `flavors`, `colors` | Sizes, the belt's shape and the whole palette. Jelly art is white and is tinted with `flavors` at startup, so color tests need no new art. |
 

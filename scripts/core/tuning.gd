@@ -26,10 +26,9 @@ const DEFAULTS := {
 	},
 	"goo": {
 		"enabled": true,
-		"gobs_per_cube": 7,
-		"gob_spacing_px": 24.0,
-		"blob_radius_px": 36.0,
-		"clump_length_px": 120.0,
+		"belt_fill": 1.0,
+		"gob_spacing_px": 34.0,
+		"blob_radius_px": 46.0,
 		"cling": 1.0,
 		"slosh": 0.6,
 		"jostle": 1.0,
