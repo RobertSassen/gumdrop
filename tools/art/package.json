@@ -1,0 +1,11 @@
+{
+  "name": "gumdrop-art",
+  "private": true,
+  "description": "Renders the game's art (sprites, background, UI pieces) into ../../art. See README.md.",
+  "scripts": { "render": "node render.js" },
+  "dependencies": {
+    "three": "0.170.0",
+    "@fontsource/fredoka": "5.1.0",
+    "playwright": "^1.48.0"
+  }
+}

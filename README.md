@@ -5,28 +5,34 @@ rack of **setting trays**. A tray sets when it holds four cubes of one flavor, a
 every tray that sets becomes one pane of the customer's window cake.
 
 This repository holds the **Godot proof of concept**. It tests the core rules and
-the dead-end solver with plain shapes and no art. The design lives in the spec
-doc, *Gumdrop's Jelly Kitchen: core mechanic spec*.
+the dead-end solver, drawn in the approved look: glossy jelly on mint silicone
+trays, a cream conveyor with coral rails, all on an oak kitchen table. The design
+lives in the spec doc, *Gumdrop's Jelly Kitchen: core mechanic spec*.
 
 ## Running it
 
 1. Install **Godot 4.7.2** or newer (standard build, no .NET needed).
 2. Open Godot, choose **Import**, and select `project.godot` in this folder.
-3. Press **F5**. The window opens at half size in portrait (540 × 960).
+3. Press **F5**. The window opens at 40% size in portrait (432 × 936; the game
+   screen is 1080 × 2340, a modern phone).
 
-Click a tray to send its front run of same-flavor cubes onto the loop. Use the
-toolbar for Undo, Restart and switching levels.
+Click a tray to send its front run of same-flavor cubes onto the loop. The
+buttons at the bottom are **Spare** (the ramekin boost, not in the PoC yet),
+**Undo** and **Restart**. The pause button at the top left opens a menu for the
+next and previous level; **Page Down** and **Page Up** do the same. After a win,
+tap anywhere for the next order.
 
 ## What the PoC covers
 
 | In | Not yet |
 | --- | --- |
 | Tap a tray, whole front run leaves, cubes ride and drop into the first tray that takes them | Press-and-hold landing preview |
-| Clockwise and counterclockwise loops, a different loop shape per level | Boosts (ramekin, extra cup) |
-| Trays set, panes fill in the window cake, win screen | Gumdrop, the shop, sound, real art |
+| Clockwise and counterclockwise loops, a different loop shape per level | Boosts (the Spare button is there but does nothing yet) |
+| Trays set, panes fill in the window cake, win screen | Gumdrop, the shop, sound |
 | Unlimited undo and restart | Real pictures in the cake (each pane takes its tray's flavor for now) |
 | 12 flavors, one per tray in every level | Level select, progress saving |
-| Game stops only when every cup is full and no cube can land | Twists (hidden cubes from level 41) |
+| Game stops only when the belt is full and no jelly can land | Twists (hidden cubes from level 41) |
+| Jelly flows along the belt as goo, pours out of trays and streams into them | |
 | 30 levels on the difficulty schedule: tutorial, normal, hard and expert | |
 
 ### How the belt works
@@ -36,13 +42,46 @@ finds no home keeps going round until a tray takes it. Because the belt keeps
 moving, *when* you tap can matter: it decides which tray a riding cube reaches
 first.
 
-The **cup tally** between the window cake and the board shows how many free
-cups are left. Filled cups in the tally show the flavors riding the belt.
+The belt has room for a set number of cubes (`cups` in the level file, from
+when jelly rode in cups). The **Belt space** gauge between the window cake and
+the board fills with the flavors riding the belt, one stretch per cube.
 
-The game stops only when every cup is full and a full lap would land nothing.
+The game stops only when the belt is full and a full lap would land nothing.
 A solver readout under the board says whether the board can still be finished.
 It's there for testing and never stops the game; turn it off with
 `solver.show_readout` in `tuning.json`.
+
+### Flowing jelly
+
+Jelly rides the belt as goo. A tapped tray pours its front run onto the passing
+belt, the goo stretches and swings to the outside on bends, a flavor clings to
+itself, and a tray that takes a cube draws its goo in as a stream.
+
+The rules don't know about any of this. `board_state.gd` still says where each
+cube is on the belt and which tray takes it, so the solver, the levels and the
+tests are unchanged. The goo is a look on top: each riding cube owns a clump of
+soft "gobs" (`scripts/goo/goo_sim.gd`) that move freely but are kept near the
+cube's place on the belt, and `scripts/goo/goo_layer.gd` melts the gobs into
+one smooth glossy surface with `shaders/goo.gdshader`.
+
+It's built to be light on a phone's battery:
+
+- Seven gobs per cube, so a full belt of six cubes is 42 gobs. One step of a
+  full belt takes about 0.17 ms in GDScript on a desktop (the tests print it).
+- The goo is drawn at a quarter of the screen resolution into a small
+  off-screen picture and smoothed up by the shader, which only reads that
+  picture a handful of times per pixel. Both passes cover only the board, and
+  are only re-rendered on frames where the goo moved.
+- When the belt stops, the goo settles and goes to sleep: no stepping, no
+  rendering.
+- The whole screen is only redrawn while something moves (`low_processor_mode`
+  is on). An idle board draws nothing at all, and twinkling set trays redraw
+  ten times a second.
+- The frame rate is capped at 60, so 120 Hz phones don't render twice as much.
+
+`goo` in `tuning.json` has the dials, and `"enabled": false` brings the cups
+back. A level can have at most six flavors on the belt at once (six color
+channels in the goo picture); no level has more than six cups.
 
 ## Tuning
 
@@ -56,31 +95,62 @@ level). Any key you leave out falls back to its default in
 | `rules` | `tray_capacity`, `default_cups` | Cavities per tray, and cups for levels that don't set their own. These change every puzzle, so re-check levels with `tools/sim.py` after editing. |
 | `loop` | `belt_speed_px_per_sec`, `riding_cube_gap_px` | How fast the belt runs, and how far apart cubes that left a tray together are drawn. |
 | `feedback` | `wobble_seconds`, `wobble_px`, `wobble_speed` | The tray wobble when a tap can't send anything. |
+| `goo` | `enabled`, `gobs_per_cube`, `gob_spacing_px`, `blob_radius_px`, `clump_length_px`, `cling`, `slosh`, `jostle`, `field_scale`, `render_scale` | The flowing jelly on the belt: how much goo a cube is, how it holds together and moves, and how much drawing it costs. Looks only; no puzzle changes. |
 | `solver` | `show_readout`, `max_boards`, `max_milliseconds` | The testing readout under the board and its budget. |
-| `look` | `cube_size_px`, `riding_cube_scale`, `belt_width_px`, `arrow_spacing_px`, `flavors`, `colors` | Sizes and the whole palette, so color tests need no code. |
+| `look` | `cube_size_px`, `jelly_gloss`, `belt_width_px`, `rail_width_px`, `belt_corner_radius_px`, `arrow_spacing_px`, `flavors`, `colors` | Sizes, the belt's shape and the whole palette. Jelly art is white and is tinted with `flavors` at startup, so color tests need no new art. |
 
 Per-level values (loop shape, direction, cups, trays) stay in the level files.
 Screen layout positions stay in code, since they move with the art.
 
+## Art
+
+Everything you see is in `art/`: the oak table, the corner dressing (mint,
+lemon, strawberries), the order card, the buttons, and sprites for trays, cups
+and jelly. The pictures are rendered by `tools/art/`, so the look can be changed
+in one place and rendered again:
+
+```
+cd tools/art
+npm install
+npx playwright install chromium
+node render.js        # writes ../../art/*.png
+```
+
+`sprites.js` builds the 3D sprites with three.js (trays, cups, jelly cubes, set
+slabs and the table), and `ui.html` holds the flat pieces as HTML and CSS. Jelly
+comes out in three white layers (shadow, body, gloss) that the game tints with
+each flavor's color. The font is Fredoka (SIL Open Font License, in
+`art/fonts/`).
+
+The drawn belt rounds the loop's corners; the rules still use the level's
+sharp loop, and jelly near a corner is moved onto the curve only when drawn.
+
 ## Project layout
 
 ```
-project.godot            Portrait 1080 × 1920, mobile renderer
+project.godot            Portrait 1080 × 2340, mobile renderer
 tuning.json              Global game values (speeds, solver budget, palette)
 scenes/game.tscn         The one screen
-scripts/game.gd          Drawing, input, the moving belt, toolbar
+scripts/game.gd          Drawing, input, the moving belt, buttons and pause menu
 scripts/core/
   board_state.gd         The rules: trays, cups, taps and the moving belt
   level.gd               Level loading and loop geometry (tray order, direction)
   solver.gd              Level check (patient player) and dead-end readout
   tuning.gd              Loads tuning.json, with defaults for missing keys
+scripts/goo/
+  goo_sim.gd             The flowing jelly: gobs that follow the rules' cubes (no drawing)
+  goo_layer.gd           Draws the gobs into one small picture for the game
+shaders/goo.gdshader     Melts that picture into smooth glossy jelly
 levels/*.json            Levels, loaded in file-name order
 tests/run_tests.gd       Headless tests
 tests/fixtures/          Move traces recorded by the Python model
 tools/sim.py             Python copy of the rules, for checking and scoring levels
 tools/build_levels.py    The level plan; builds levels/ to hit each level's difficulty band
 tools/gen_level.py       Searches shuffles for solvable levels
-tools/screenshot.gd      Saves a screenshot, optionally after some taps
+tools/screenshot.gd      Saves a full-size screenshot, optionally after some taps
+tools/record.gd          Saves a run of frames with timed taps, for checking motion
+tools/art/               Renders the pictures in art/ (Node, three.js, Playwright)
+art/                     Sprites, background, UI pieces and the font
 ```
 
 ## Level files
