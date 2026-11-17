@@ -95,6 +95,30 @@ func from_dict(d: Dictionary) -> void:
 	_build_geometry()
 
 
+## The flavors this level uses, lowest id first.
+func flavors_used() -> Array:
+	var seen := {}
+	for cubes in tray_cubes:
+		for f in cubes:
+			seen[f] = true
+	for r in start_riding:
+		seen[r.x] = true
+	var out := seen.keys()
+	out.sort()
+	return out
+
+
+## Swaps flavors (old id -> new id) everywhere in the level. The puzzle stays
+## the same; only the colors change. Used to match a window cake's glass.
+func remap_flavors(map: Dictionary) -> void:
+	for cubes in tray_cubes:
+		for i in cubes.size():
+			cubes[i] = map.get(cubes[i], cubes[i])
+	for i in start_riding.size():
+		var r: Vector2i = start_riding[i]
+		start_riding[i] = Vector2i(map.get(r.x, r.x), r.y)
+
+
 func make_board():
 	var b = BoardState.new()
 	b.setup(tray_cubes, travel_order, stop_pos, belt_length, cups, start_riding)

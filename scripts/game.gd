@@ -18,6 +18,7 @@ const Level = preload("res://scripts/core/level.gd")
 const Solver = preload("res://scripts/core/solver.gd")
 const Tuning = preload("res://scripts/core/tuning.gd")
 const GooLayer = preload("res://scripts/goo/goo_layer.gd")
+const WindowCake = preload("res://scripts/core/window_cake.gd")
 
 const LEVEL_DIR := "res://levels/"
 const SCREEN := Vector2(1080, 2340)
@@ -34,6 +35,14 @@ const CARD_POS := Vector2(190, 164)
 const CAKE_GRID := Rect2(246, 280, 588, 320)
 const CAKE_GRID_PAD := 20.0
 const CAKE_GRID_GAP := 16.0
+## The window cake on the card: this level's panel, and the whole window.
+const PANEL_RECT := Rect2(264, 290, 300, 300)
+const WINDOW_RECT := Rect2(598, 306, 220, 220)
+const WINDOW_LABEL_Y := 562.0
+const PROGRESS_FILE := "user://progress.json"
+## Seconds a flavor of glass takes to fill in once its tray sets.
+const GLASS_FILL_SECONDS := 0.6
+const LEAD_COLOR := Color("40312d")
 const RIBBON_CENTER := Vector2(540, 160)
 const CUSTOMER_Y := 242.0
 const PILL_TOP := 636.0
@@ -73,6 +82,14 @@ var belt_speed := 1400.0
 var wobble := {}  # tray -> time the wobble started
 var jiggle := {}  # tray -> time a cube last landed in it
 var time_sec := 0.0
+
+## Window cakes: the stained-glass pictures built over a run of levels.
+var windows: Array = []  # WindowCake
+var window_cake  # the window this level belongs to, or null
+var window_panel := -1  # this level's panel in it
+var window_tex := {}  # window id -> {"base", "lead", flavor id -> Texture2D}
+var glass_since := {}  # flavor id -> time its tray set, for the fill-in
+var won_levels := {}  # level id -> true, kept between sessions
 
 var dead_end := false
 var paused := false
@@ -124,6 +141,8 @@ func _ready() -> void:
 	Tuning.reload()
 	_apply_tuning()
 	level_files = _find_levels()
+	windows = WindowCake.load_all()
+	_load_progress()
 	if level_files.is_empty():
 		status_text = "No levels found in " + LEVEL_DIR
 		return
@@ -156,8 +175,10 @@ func _load_level(i: int) -> void:
 	if level == null:
 		status_text = "Couldn't load " + level_files[level_index]
 		return
+	_find_window()
 	board = level.make_board()
 	history.clear()
+	glass_since.clear()
 	belt_carry = 0.0
 	wobble.clear()
 	jiggle.clear()
@@ -165,6 +186,95 @@ func _load_level(i: int) -> void:
 	_build_belt_path()
 	_reset_goo()
 	_evaluate()
+
+
+# --- Window cakes ------------------------------------------------------------
+
+## Finds the window this level is a panel of and gives the level the flavors
+## of that panel's glass.
+func _find_window() -> void:
+	window_cake = null
+	window_panel = -1
+	for w in windows:
+		var p: int = w.panel_of(level_index + 1)
+		if p < 0:
+			continue
+		var map: Dictionary = w.flavor_map(p, level.flavors_used())
+		if map.is_empty():
+			push_error("Window %s panel %d doesn't match the trays of %s" % [w.id, p + 1, level.id])
+			return
+		level.remap_flavors(map)
+		window_cake = w
+		window_panel = p
+		_window_art(w)
+		return
+
+
+## The pictures of a window, loaded the first time it's shown.
+func _window_art(w) -> Dictionary:
+	if not window_tex.has(w.id):
+		var art := {}
+		var dir := "res://art/windows/%s/" % w.id
+		art["base"] = load(dir + "base.png")
+		art["lead"] = load(dir + "lead.png")
+		for glass in w.panels:
+			for f in glass:
+				if not art.has(f):
+					art[f] = load(dir + Level.FLAVORS[f] + ".png")
+		window_tex[w.id] = art
+	return window_tex[w.id]
+
+
+func _level_id(level_number: int) -> String:
+	return level_files[level_number - 1].get_basename()
+
+
+func _load_progress() -> void:
+	won_levels = {}
+	var data = JSON.parse_string(FileAccess.get_file_as_string(PROGRESS_FILE)) if FileAccess.file_exists(PROGRESS_FILE) else null
+	if typeof(data) == TYPE_DICTIONARY:
+		for id in data.get("won", []):
+			won_levels[str(id)] = true
+
+
+func _mark_won() -> void:
+	if won_levels.has(level.id):
+		return
+	won_levels[level.id] = true
+	var f := FileAccess.open(PROGRESS_FILE, FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify({"won": won_levels.keys()}))
+
+
+func _window_complete() -> bool:
+	if window_cake == null:
+		return false
+	for n in window_cake.levels:
+		if not won_levels.has(_level_id(n)):
+			return false
+	return true
+
+
+## Notes which flavors of glass have a set tray, and when each one set, so
+## the panel can fill in. Undo takes a flavor out again.
+func _track_glass() -> void:
+	var now := {}
+	for t in level.tray_count():
+		if board.set_flags[t]:
+			now[board.trays[t][0]] = true
+	for f in glass_since.keys():
+		if not now.has(f):
+			glass_since.erase(f)
+	for f in now:
+		if not glass_since.has(f):
+			glass_since[f] = time_sec
+
+
+func _glass_filling() -> bool:
+	for f in glass_since:
+		if time_sec - glass_since[f] < GLASS_FILL_SECONDS:
+			return true
+	return false
 
 
 # --- Input -----------------------------------------------------------------
@@ -299,7 +409,7 @@ func _process(delta: float) -> void:
 		flowing = goo.advance(delta, running, _riding_positions())
 	_poll_solvers()
 	# Redraw only while something on screen changes; an idle board costs nothing.
-	if running or flowing or not wobble.is_empty() or not jiggle.is_empty():
+	if running or flowing or not wobble.is_empty() or not jiggle.is_empty() or _glass_filling():
 		queue_redraw()
 		return
 	idle_clock += delta
@@ -348,7 +458,9 @@ func _evaluate() -> void:
 	_cancel_solvers()
 	dead_end = false
 	status_text = ""
+	_track_glass()
 	if board.is_won():
+		_mark_won()
 		status_text = "Order complete! The window cake is ready."
 		solver_text = ""
 		return
@@ -796,6 +908,9 @@ func _draw_riding_cubes() -> void:
 ## tray, filled with the tray's flavor once it sets.
 func _draw_cake() -> void:
 	draw_texture(tex["card"], CARD_POS - Vector2.ONE * ART_PAD)
+	if window_cake != null:
+		_draw_window_cake()
+		return
 	_text(level.title, RIBBON_CENTER, 46, Color.WHITE, 4, Color("a8264a"), font, 2.0)
 	if level.customer != "":
 		_text("for " + level.customer, Vector2(540, CUSTOMER_Y), 30, Color("a06a3f"), 0, Color.BLACK, font_semibold)
@@ -814,6 +929,56 @@ func _draw_cake() -> void:
 			draw_style_box(pane_gloss_box, r)
 		else:
 			draw_style_box(pane_empty_box, r)
+
+
+## A window cake on the card: this level's panel large on the left, filling
+## in flavor by flavor as trays set, and the whole window small on the right
+## with the panels of finished levels in color.
+func _draw_window_cake() -> void:
+	var w = window_cake
+	_text(w.title, RIBBON_CENTER, 46, Color.WHITE, 4, Color("a8264a"), font, 2.0)
+	var who := "panel %d of %d" % [window_panel + 1, w.panel_count()]
+	if w.customer != "":
+		who = "for %s  ·  %s" % [w.customer, who]
+	_text(who, Vector2(540, CUSTOMER_Y), 30, Color("a06a3f"), 0, Color.BLACK, font_semibold)
+	_draw_panel(w, window_panel, PANEL_RECT, true)
+	draw_rect(PANEL_RECT.grow(3), LEAD_COLOR, false, 8.0)
+	var size := Vector2(WINDOW_RECT.size.x / w.cols, WINDOW_RECT.size.y / w.rows)
+	for p in w.panel_count():
+		var r := Rect2(WINDOW_RECT.position + Vector2((p % w.cols) * size.x, (p / w.cols) * size.y), size)
+		_draw_panel(w, p, r, p == window_panel)
+		draw_rect(r, LEAD_COLOR, false, 4.0)
+	var done := _window_complete()
+	draw_rect(WINDOW_RECT.grow(3), LEAD_COLOR, false, 6.0)
+	if done:
+		draw_rect(WINDOW_RECT.grow(9), Color("ffd02b"), false, 6.0)
+	else:
+		var r := Rect2(WINDOW_RECT.position + Vector2((window_panel % w.cols) * size.x, (window_panel / w.cols) * size.y), size)
+		draw_rect(r.grow(-3), Color("ee5677"), false, 5.0)
+	_text("Window complete" if done else "The whole window", Vector2(WINDOW_RECT.get_center().x, WINDOW_LABEL_Y), 26, Color("a06a3f"), 0, Color.BLACK, font_semibold)
+
+
+## One panel of a window: clear glass, then each flavor that has set, then the
+## lead lines. The level's own panel follows the board; other panels are in
+## color once their level has been won.
+func _draw_panel(w, panel: int, rect: Rect2, live: bool) -> void:
+	var art := _window_art(w)
+	var region: Rect2 = w.panel_region(panel)
+	draw_texture_rect_region(art["base"], rect, region)
+	var won: bool = won_levels.has(_level_id(w.levels[panel]))
+	for f in w.panels[panel]:
+		var k := 1.0 if won else 0.0
+		if live:
+			k = clampf((time_sec - glass_since[f]) / GLASS_FILL_SECONDS, 0.0, 1.0) if glass_since.has(f) else 0.0
+		if k <= 0.0:
+			continue
+		var c: Color = flavor_colors[f]
+		# The glass eases in and flashes pale on the way, like jelly setting.
+		var ease_in := 1.0 - pow(1.0 - k, 3.0)
+		c = c.lerp(Color.WHITE, sin(PI * k) * 0.45)
+		c.a = ease_in
+		draw_texture_rect_region(art[f], rect, region, c)
+	draw_texture_rect_region(art["lead"], rect, region)
 
 
 ## The room left on the belt: a pill with one mark per cube the belt can hold.
@@ -914,8 +1079,16 @@ func _draw_banner() -> void:
 	draw_rect(Rect2(Vector2.ZERO, SCREEN), Color(0.2, 0.1, 0.03, 0.25))
 	draw_style_box(banner_box, r)
 	if board.is_won():
-		_text("Order complete!", r.get_center() + Vector2(0, -40), 64, Color.WHITE, 5, Color("a8264a"), font, 3.0)
-		_text("Every tray has set. Tap for the next order.", r.get_center() + Vector2(0, 58), 30, Color("a06a3f"), 0, Color.BLACK, font_semibold)
+		var head := "Order complete!"
+		var line := "Every tray has set. Tap for the next order."
+		if window_cake != null and _window_complete():
+			head = "Window complete!"
+			line = "“%s” is ready. Tap for the next order." % window_cake.title
+		elif window_cake != null:
+			head = "Panel complete!"
+			line = "Panel %d of %d is in the window. Tap for the next one." % [window_panel + 1, window_cake.panel_count()]
+		_text(head, r.get_center() + Vector2(0, -40), 64, Color.WHITE, 5, Color("a8264a"), font, 3.0)
+		_text(line, r.get_center() + Vector2(0, 58), 30, Color("a06a3f"), 0, Color.BLACK, font_semibold)
 	else:
 		_text("Gumdrop scratches its head...", r.get_center() + Vector2(0, -40), 52, Color.WHITE, 5, Color("6b3510"), font, 3.0)
 		_text("The belt is full and no jelly can land. Undo or restart.", r.get_center() + Vector2(0, 58), 30, Color("a06a3f"), 0, Color.BLACK, font_semibold)

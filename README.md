@@ -29,11 +29,12 @@ tap anywhere for the next order.
 | Tap a tray, whole front run leaves, cubes ride and drop into the first tray that takes them | Press-and-hold landing preview |
 | Clockwise and counterclockwise loops, a different loop shape per level | Boosts (the Spare button is there but does nothing yet) |
 | Trays set, panes fill in the window cake, win screen | Gumdrop, the shop, sound |
-| Unlimited undo and restart | Real pictures in the cake (each pane takes its tray's flavor for now) |
+| Unlimited undo and restart | Window pictures for levels 9 to 30 (they still show one plain pane per tray) |
 | 12 flavors, one per tray in every level | Level select, progress saving |
 | Game stops only when the belt is full and no jelly can land | Twists (hidden cubes from level 41) |
 | Jelly flows along the belt as goo, pours out of trays and streams into them | |
 | 30 levels on the difficulty schedule: tutorial, normal, hard and expert | |
+| Stained-glass window cakes for levels 1 to 8: each level fills one panel of a 2 × 2 window | |
 
 ### How the belt works
 
@@ -50,6 +51,24 @@ The game stops only when the belt is full and a full lap would land nothing.
 A solver readout under the board says whether the board can still be finished.
 It's there for testing and never stops the game; turn it off with
 `solver.show_readout` in `tuning.json`.
+
+### Window cakes
+
+A window cake is one stained-glass scene built over a run of levels. The scene
+is cut into a grid of panels, one per level, and each panel holds exactly as
+many flavors of glass as its level has trays. The drawing is there from the
+start as lead lines on clear glass. When a tray sets, all the glass of its
+flavor in that level's panel fills in. The order card shows the level's panel
+on the left and the whole window on the right, where panels of finished levels
+stay in color. Which levels are finished is saved between sessions.
+
+The scenes are drawn in `tools/art/windows.js`. `node render-windows.js` in
+`tools/art` writes the pictures to `art/windows/<id>/` (clear glass, lead
+lines, and one white layer per flavor that the game tints from `tuning.json`)
+and a small file in `windows/` that says which levels the window covers and
+which flavors each panel holds. A level takes its colors from its panel, which
+doesn't change how it plays. The tests check that every panel has one flavor
+per tray of its level. Levels without a window keep the plain panes.
 
 ### Flowing jelly
 
