@@ -9,6 +9,7 @@ const BoardState = preload("res://scripts/core/board_state.gd")
 const Level = preload("res://scripts/core/level.gd")
 const Solver = preload("res://scripts/core/solver.gd")
 const Tuning = preload("res://scripts/core/tuning.gd")
+const WindowCake = preload("res://scripts/core/window_cake.gd")
 const GooSim = preload("res://scripts/goo/goo_sim.gd")
 
 const R := 0  # cherry
@@ -37,6 +38,7 @@ func _init() -> void:
 	test_tuning_file_loads()
 	test_levels_match_python_model()
 	test_levels_are_solvable()
+	test_windows_match_their_levels()
 	test_goo_pours_rides_and_lands()
 	test_goo_splits_a_run_between_tray_and_belt()
 	test_goo_rests_when_the_belt_stops()
@@ -50,6 +52,44 @@ func check(cond: bool, what: String) -> void:
 	if not cond:
 		failures += 1
 		printerr("FAIL: " + what)
+
+
+## Every window panel holds exactly its level's number of flavors, has its
+## pictures, and gives the level the panel's glass flavors without changing
+## the puzzle.
+func test_windows_match_their_levels() -> void:
+	var files := PackedStringArray()
+	for f in DirAccess.get_files_at("res://levels/"):
+		if f.ends_with(".json"):
+			files.append(f)
+	files.sort()
+	var windows: Array = WindowCake.load_all()
+	check(windows.size() > 0, "there is at least one window cake")
+	var claimed := {}
+	for w in windows:
+		check(w.panel_count() == w.cols * w.rows and w.panels.size() == w.panel_count(), w.id + " has a panel for every grid cell")
+		for name in ["base", "lead"]:
+			check(ResourceLoader.exists("res://art/windows/%s/%s.png" % [w.id, name]), "%s has its %s picture" % [w.id, name])
+		for p in w.panel_count():
+			var n: int = w.levels[p]
+			check(not claimed.has(n), "level %d belongs to one window only" % n)
+			claimed[n] = true
+			check(n >= 1 and n <= files.size(), "%s panel %d names a real level" % [w.id, p + 1])
+			var lv = Level.load_file("res://levels/" + files[n - 1])
+			var used: Array = lv.flavors_used()
+			check(w.panels[p].size() == lv.tray_count(), "%s panel %d has one flavor of glass per tray of %s" % [w.id, p + 1, lv.id])
+			var map: Dictionary = w.flavor_map(p, used)
+			check(map.size() == used.size(), "%s panel %d maps every flavor of %s" % [w.id, p + 1, lv.id])
+			var before: Array = lv.tray_cubes.duplicate(true)
+			lv.remap_flavors(map)
+			var same := true
+			for t in before.size():
+				for i in before[t].size():
+					same = same and lv.tray_cubes[t][i] == map[before[t][i]]
+			check(same, "%s panel %d only swaps colors in %s" % [w.id, p + 1, lv.id])
+			check(lv.flavors_used() == w.panels[p], "%s now uses the glass flavors of panel %d" % [lv.id, p + 1])
+			for f in w.panels[p]:
+				check(ResourceLoader.exists("res://art/windows/%s/%s.png" % [w.id, Level.FLAVORS[f]]), "%s has its %s glass" % [w.id, Level.FLAVORS[f]])
 
 
 ## A board whose travel order is tray 0, 1, 2, ... with stops HOP pixels

@@ -1,0 +1,42 @@
+{
+ "id": "01_kite_day",
+ "title": "Kite day",
+ "customer": "Coach Lin",
+ "cols": 2,
+ "rows": 2,
+ "levels": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "panel_px": 320,
+ "panels": [
+  [
+   "tangerine",
+   "lemon",
+   "soda"
+  ],
+  [
+   "cherry",
+   "lemon",
+   "soda",
+   "grape"
+  ],
+  [
+   "cherry",
+   "lemon",
+   "lime",
+   "mint",
+   "soda"
+  ],
+  [
+   "lime",
+   "soda",
+   "blueberry",
+   "raspberry",
+   "cola",
+   "peach"
+  ]
+ ]
+}

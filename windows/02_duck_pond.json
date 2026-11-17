@@ -1,0 +1,48 @@
+{
+ "id": "02_duck_pond",
+ "title": "The duck pond",
+ "customer": "The twins next door",
+ "cols": 2,
+ "rows": 2,
+ "levels": [
+  5,
+  6,
+  7,
+  8
+ ],
+ "panel_px": 320,
+ "panels": [
+  [
+   "tangerine",
+   "lemon",
+   "lime",
+   "soda",
+   "grape"
+  ],
+  [
+   "lime",
+   "mint",
+   "soda",
+   "raspberry",
+   "cola",
+   "peach"
+  ],
+  [
+   "tangerine",
+   "lemon",
+   "lime",
+   "mint",
+   "blueberry",
+   "cola"
+  ],
+  [
+   "cherry",
+   "lemon",
+   "lime",
+   "mint",
+   "blueberry",
+   "grape",
+   "raspberry"
+  ]
+ ]
+}
